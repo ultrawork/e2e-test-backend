@@ -41,6 +41,8 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        env:
+          NODE_ENV: development
 
       - name: Generate Prisma client
         run: npx prisma generate
