@@ -1,6 +1,6 @@
 # GitHub Actions CI для e2e-test-backend
 # Назначение: Project repository added via interview pipeline
-# Максимально строгий пайплайн: detekt + test + coverage (80%) + build
+# Пайплайн: lint + test + build
 
 name: CI — e2e-test-backend
 
@@ -33,31 +33,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          node-version: '20'
+          cache: 'npm'
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Lint (Detekt)
-        run: ./gradlew detekt --no-daemon
+      - name: Generate Prisma client
+        run: npx prisma generate
 
-      - name: Test with coverage
-        run: ./gradlew test jacocoTestReport --no-daemon
+      - name: Lint
+        run: npm run lint
 
-      - name: Check coverage threshold (80%)
-        run: |
-          ./gradlew jacocoTestCoverageVerification --no-daemon || echo "Coverage below 80% threshold"
+      - name: Test
+        run: npm test
 
       - name: Build
-        run: ./gradlew build --no-daemon -x test
+        run: npm run build
