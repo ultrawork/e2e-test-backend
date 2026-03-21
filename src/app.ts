@@ -10,11 +10,12 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-app.use(apiLimiter);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
+
+app.use(apiLimiter);
 
 app.use("/api", router);
 
