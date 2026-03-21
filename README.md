@@ -75,14 +75,42 @@ The API will be available at `http://localhost:3000`.
 | `PUT` | `/api/notes/:id` | Update note |
 | `DELETE` | `/api/notes/:id` | Delete note |
 
+## Database Schema Changes
+
+- Added `Category` model with fields: `id` (UUID), `name`, `color`, `createdAt`
+- `Note` now has a many-to-many relationship with `Category` via `Note.categories: Category[]`
+- Removed the old `Category` enum (`PERSONAL`, `WORK`, `IDEAS`) and the `Note.category` field
+- The implicit join table `_CategoryToNote` is created automatically by Prisma with cascading deletes on both sides (deleting a Note or Category removes the related join records)
+
+### Running Migrations
+
+```bash
+# Generate Prisma client after schema changes
+npx prisma generate
+
+# Apply migrations in development
+npx prisma migrate dev -n add_category_mn
+
+# Apply migrations in production / container
+npx prisma migrate deploy
+```
+
+Inside Docker:
+
+```bash
+docker compose exec backend npx prisma migrate deploy
+```
+
 ## Project Structure
 
 ```
 ├── prisma/
-│   └── schema.prisma        # Database schema (User, Note, Category)
+│   ├── schema.prisma        # Database schema (User, Note, Category)
+│   └── migrations/          # SQL migration files
 ├── src/
 │   ├── config/               # Environment configuration
 │   ├── middleware/            # Auth, error handling, rate limiting
+│   ├── models/               # TypeScript type exports (Note, Category)
 │   ├── routes/               # API route definitions
 │   ├── services/             # Business logic (placeholder)
 │   ├── types/                # TypeScript type definitions
