@@ -31,12 +31,26 @@ export async function getNoteById(
   return note;
 }
 
+async function validateCategoryIds(categoryIds: string[]): Promise<void> {
+  if (categoryIds.length === 0) return;
+  const existing = await prisma.category.findMany({
+    where: { id: { in: categoryIds } },
+    select: { id: true },
+  });
+  if (existing.length !== categoryIds.length) {
+    throw new Error("One or more categories not found");
+  }
+}
+
 export async function createNote(
   userId: string,
   title: string,
   content: string,
   categoryIds?: string[]
 ): Promise<NoteWithCategories> {
+  if (categoryIds && categoryIds.length > 0) {
+    await validateCategoryIds(categoryIds);
+  }
   return prisma.note.create({
     data: {
       userId,
@@ -63,6 +77,9 @@ export async function updateNote(
   }
   if (existing.userId !== userId) {
     throw new Error("Forbidden");
+  }
+  if (categoryIds && categoryIds.length > 0) {
+    await validateCategoryIds(categoryIds);
   }
   return prisma.note.update({
     where: { id },

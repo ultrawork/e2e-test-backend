@@ -1,20 +1,24 @@
 describe("notesService with mocked Prisma", () => {
-  const mockFindMany = jest.fn();
-  const mockFindUnique = jest.fn();
-  const mockCreate = jest.fn();
-  const mockUpdate = jest.fn();
-  const mockDelete = jest.fn();
+  const mockNoteFindMany = jest.fn();
+  const mockNoteFindUnique = jest.fn();
+  const mockNoteCreate = jest.fn();
+  const mockNoteUpdate = jest.fn();
+  const mockNoteDelete = jest.fn();
+  const mockCategoryFindMany = jest.fn();
 
   beforeEach(() => {
     jest.resetModules();
     jest.mock("../lib/prisma", () => ({
       prisma: {
         note: {
-          findMany: mockFindMany,
-          findUnique: mockFindUnique,
-          create: mockCreate,
-          update: mockUpdate,
-          delete: mockDelete,
+          findMany: mockNoteFindMany,
+          findUnique: mockNoteFindUnique,
+          create: mockNoteCreate,
+          update: mockNoteUpdate,
+          delete: mockNoteDelete,
+        },
+        category: {
+          findMany: mockCategoryFindMany,
         },
       },
     }));
@@ -23,11 +27,11 @@ describe("notesService with mocked Prisma", () => {
 
   it("listNotes calls findMany with userId filter and includes categories", async () => {
     const { listNotes } = await import("../services/notes.service");
-    mockFindMany.mockResolvedValueOnce([]);
+    mockNoteFindMany.mockResolvedValueOnce([]);
 
     await listNotes("user-1");
 
-    expect(mockFindMany).toHaveBeenCalledWith(
+    expect(mockNoteFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ userId: "user-1" }),
         include: expect.objectContaining({ categories: true }),
@@ -37,11 +41,11 @@ describe("notesService with mocked Prisma", () => {
 
   it("listNotes with categoryId filters by category", async () => {
     const { listNotes } = await import("../services/notes.service");
-    mockFindMany.mockResolvedValueOnce([]);
+    mockNoteFindMany.mockResolvedValueOnce([]);
 
     await listNotes("user-1", "cat-1");
 
-    expect(mockFindMany).toHaveBeenCalledWith(
+    expect(mockNoteFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
           userId: "user-1",
@@ -62,12 +66,13 @@ describe("notesService with mocked Prisma", () => {
       updatedAt: new Date(),
       categories: [],
     };
-    mockFindUnique.mockResolvedValueOnce(existingNote);
-    mockUpdate.mockResolvedValueOnce({ ...existingNote, categories: [] });
+    mockNoteFindUnique.mockResolvedValueOnce(existingNote);
+    mockCategoryFindMany.mockResolvedValueOnce([{ id: "cat-1" }]);
+    mockNoteUpdate.mockResolvedValueOnce({ ...existingNote, categories: [] });
 
     await updateNote("note-1", "user-1", "New Title", "New Content", ["cat-1"]);
 
-    expect(mockUpdate).toHaveBeenCalledWith(
+    expect(mockNoteUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           categories: { set: [{ id: "cat-1" }] },
@@ -76,9 +81,28 @@ describe("notesService with mocked Prisma", () => {
     );
   });
 
+  it("updateNote throws 400 if categoryId does not exist", async () => {
+    const { updateNote } = await import("../services/notes.service");
+    const existingNote = {
+      id: "note-1",
+      userId: "user-1",
+      title: "T",
+      content: "C",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      categories: [],
+    };
+    mockNoteFindUnique.mockResolvedValueOnce(existingNote);
+    mockCategoryFindMany.mockResolvedValueOnce([]);
+
+    await expect(
+      updateNote("note-1", "user-1", "Title", "Content", ["nonexistent-cat"])
+    ).rejects.toThrow("One or more categories not found");
+  });
+
   it("updateNote throws 404 if note not found", async () => {
     const { updateNote } = await import("../services/notes.service");
-    mockFindUnique.mockResolvedValueOnce(null);
+    mockNoteFindUnique.mockResolvedValueOnce(null);
 
     await expect(
       updateNote("nonexistent", "user-1", "Title", "Content")
@@ -87,7 +111,7 @@ describe("notesService with mocked Prisma", () => {
 
   it("updateNote throws 403 if userId does not match", async () => {
     const { updateNote } = await import("../services/notes.service");
-    mockFindUnique.mockResolvedValueOnce({
+    mockNoteFindUnique.mockResolvedValueOnce({
       id: "note-1",
       userId: "other-user",
     });

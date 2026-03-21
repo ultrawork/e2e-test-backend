@@ -8,7 +8,7 @@ export function validateCategoryInput(
   name: string,
   color: string
 ): string | null {
-  if (!name || name.length < 1 || name.length > 30) {
+  if (!name || name.length > 30) {
     return "name must be between 1 and 30 characters";
   }
   if (!HEX_REGEX.test(color)) {
