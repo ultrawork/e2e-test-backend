@@ -20,13 +20,14 @@ model User {
 }
 
 model Note {
-  id       String   @id @default(uuid())
-  title    String
-  content  String
-  category Category @default(PERSONAL)
+  id      String @id @default(uuid())
+  title   String
+  content String
 
   userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  categories NoteCategory[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -35,8 +36,25 @@ model Note {
   @@map("notes")
 }
 
-enum Category {
-  PERSONAL
-  WORK
-  IDEAS
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  color     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  notes NoteCategory[]
+
+  @@map("categories")
+}
+
+model NoteCategory {
+  noteId     String @map("note_id")
+  categoryId String @map("category_id")
+
+  note     Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([noteId, categoryId])
+  @@map("note_categories")
 }
