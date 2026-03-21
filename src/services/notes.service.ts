@@ -42,17 +42,6 @@ async function validateCategoryIds(categoryIds: string[]): Promise<void> {
   }
 }
 
-async function ensureUserExists(userId: string): Promise<void> {
-  const existing = await prisma.user.findUnique({ where: { id: userId } });
-  if (!existing) {
-    await prisma.user.create({
-      data: { id: userId, email: `${userId}@placeholder.local`, password: "" },
-    }).catch(() => {
-      // Ignore duplicate — may have been created concurrently
-    });
-  }
-}
-
 export async function createNote(
   userId: string,
   title: string,
@@ -62,7 +51,6 @@ export async function createNote(
   if (categoryIds && categoryIds.length > 0) {
     await validateCategoryIds(categoryIds);
   }
-  await ensureUserExists(userId);
   return prisma.note.create({
     data: {
       userId,
