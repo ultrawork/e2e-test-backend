@@ -4,11 +4,11 @@ import { config } from "../config";
 import { AuthPayload } from "../types";
 import { prisma } from "../lib/prisma";
 
-export async function authMiddleware(
+export function authMiddleware(
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void> {
+): void {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     res.status(401).json({ error: "Unauthorized" });
@@ -26,9 +26,10 @@ export async function authMiddleware(
 
   req.user = { userId: payload.userId, email: payload.email };
 
-  // Ensure user exists in DB (upsert to avoid FK constraint violations)
-  try {
-    await prisma.user.upsert({
+  // Ensure user exists in DB to prevent FK constraint violations on note creation.
+  // Use Promise chaining (not async/await) for Express 4 compatibility.
+  prisma.user
+    .upsert({
       where: { id: payload.userId },
       update: {},
       create: {
@@ -36,11 +37,9 @@ export async function authMiddleware(
         email: payload.email,
         password: "",
       },
-    });
-  } catch {
-    // Swallow upsert errors — proceed anyway so route-level
-    // validations (e.g. category checks) can return proper 400s.
-  }
-
-  next();
+    })
+    .catch(() => {
+      // Swallow upsert errors so route-level validations can return proper 400s
+    })
+    .then(() => next());
 }
