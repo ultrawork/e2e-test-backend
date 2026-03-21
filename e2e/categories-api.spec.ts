@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "test-secret";
+const JWT_SECRET = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
 const API_URL = process.env.API_URL || process.env.BASE_URL || "http://localhost:4000";
 
 function makeToken(userId: string, email: string): string {
