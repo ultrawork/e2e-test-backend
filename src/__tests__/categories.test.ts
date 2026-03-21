@@ -9,27 +9,33 @@ jest.mock("../middleware/auth", () => ({
   },
 }));
 
-jest.mock("../lib/prisma", () => ({
-  prisma: {
-    category: {
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
+jest.mock("../lib/prisma", () => {
+  const noteCategory = {
+    deleteMany: jest.fn(),
+    createMany: jest.fn(),
+  };
+  return {
+    prisma: {
+      category: {
+        findMany: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
+      note: {
+        findMany: jest.fn(),
+        findUnique: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
+      noteCategory,
+      $transaction: jest.fn((cb: (tx: { noteCategory: typeof noteCategory }) => Promise<void>) =>
+        cb({ noteCategory }),
+      ),
     },
-    note: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-    noteCategory: {
-      deleteMany: jest.fn(),
-      createMany: jest.fn(),
-    },
-  },
-}));
+  };
+});
 
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 
@@ -79,6 +85,15 @@ describe("Categories CRUD", () => {
       const res = await request(app)
         .post("/api/categories")
         .send({ name: "", color: "#FF5733" });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/Name/);
+    });
+
+    it("should return 400 if name is only whitespace", async () => {
+      const res = await request(app)
+        .post("/api/categories")
+        .send({ name: "   ", color: "#FF5733" });
 
       expect(res.status).toBe(400);
       expect(res.body.error).toMatch(/Name/);

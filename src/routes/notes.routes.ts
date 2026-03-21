@@ -58,6 +58,8 @@ notesRouter.get("/", async (req: Request, res: Response) => {
   }
 });
 
+// TODO: GET /:id, PUT /:id, DELETE /:id do not verify note ownership (req.user.userId === note.userId)
+
 /** GET /api/notes/:id */
 notesRouter.get("/:id", async (req: Request, res: Response) => {
   try {
@@ -111,7 +113,15 @@ notesRouter.post("/", async (req: Request, res: Response) => {
       include: categoriesInclude,
     });
     res.status(201).json(formatNote(note));
-  } catch (err) {
+  } catch (err: unknown) {
+    if (
+      err instanceof Error &&
+      "code" in err &&
+      (err as { code: string }).code === "P2003"
+    ) {
+      res.status(400).json({ error: "One or more categoryIds are invalid" });
+      return;
+    }
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
@@ -138,15 +148,17 @@ notesRouter.put("/:id", async (req: Request, res: Response) => {
     });
 
     if (Array.isArray(categoryIds)) {
-      await prisma.noteCategory.deleteMany({ where: { noteId: id } });
-      if (categoryIds.length > 0) {
-        await prisma.noteCategory.createMany({
-          data: categoryIds.map((cid: string) => ({
-            noteId: id,
-            categoryId: cid,
-          })),
-        });
-      }
+      await prisma.$transaction(async (tx) => {
+        await tx.noteCategory.deleteMany({ where: { noteId: id } });
+        if (categoryIds.length > 0) {
+          await tx.noteCategory.createMany({
+            data: categoryIds.map((cid: string) => ({
+              noteId: id,
+              categoryId: cid,
+            })),
+          });
+        }
+      });
     }
 
     const updated = await prisma.note.findUnique({
@@ -154,7 +166,15 @@ notesRouter.put("/:id", async (req: Request, res: Response) => {
       include: categoriesInclude,
     });
     res.json(formatNote(updated!));
-  } catch (err) {
+  } catch (err: unknown) {
+    if (
+      err instanceof Error &&
+      "code" in err &&
+      (err as { code: string }).code === "P2003"
+    ) {
+      res.status(400).json({ error: "One or more categoryIds are invalid" });
+      return;
+    }
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }

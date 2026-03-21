@@ -7,7 +7,7 @@ const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 
 /** Validates category name and color. Returns error message or null. */
 function validateCategory(name: unknown, color: unknown): string | null {
-  if (typeof name !== "string" || name.length < 1 || name.length > 30) {
+  if (typeof name !== "string" || name.trim().length < 1 || name.length > 30) {
     return "Name must be between 1 and 30 characters";
   }
   if (typeof color !== "string" || !HEX_RE.test(color)) {
