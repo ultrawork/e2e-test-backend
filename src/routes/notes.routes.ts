@@ -67,7 +67,7 @@ notesRouter.post("/", async (req: Request, res: Response) => {
     return;
   }
   try {
-    const note = await createNote(userId, title, content, categoryIds);
+    const note = await createNote(userId, title, content, categoryIds, req.user!.email);
     res.status(201).json(note);
   } catch (err) {
     handleNoteError(err, res);

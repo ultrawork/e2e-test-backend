@@ -46,11 +46,17 @@ export async function createNote(
   userId: string,
   title: string,
   content: string,
-  categoryIds?: string[]
+  categoryIds?: string[],
+  email?: string
 ): Promise<NoteWithCategories> {
   if (categoryIds && categoryIds.length > 0) {
     await validateCategoryIds(categoryIds);
   }
+  await prisma.user.upsert({
+    where: { id: userId },
+    update: {},
+    create: { id: userId, email: email || `${userId}@placeholder.local`, password: "" },
+  });
   return prisma.note.create({
     data: {
       userId,
