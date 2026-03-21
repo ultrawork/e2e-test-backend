@@ -1,6 +1,5 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response } from "express";
 import { authMiddleware } from "../middleware/auth";
-import { prisma } from "../lib/prisma";
 import {
   listNotes,
   getNoteById,
@@ -12,19 +11,6 @@ import {
 const notesRouter = Router();
 
 notesRouter.use(authMiddleware);
-
-// Ensure the authenticated user exists in the DB (prevents FK constraint errors on note creation)
-notesRouter.use((req: Request, _res: Response, next: NextFunction) => {
-  const { userId, email } = req.user!;
-  prisma.user
-    .upsert({
-      where: { id: userId },
-      update: {},
-      create: { id: userId, email, password: "" },
-    })
-    .then(() => next())
-    .catch(() => next());
-});
 
 function handleNoteError(err: unknown, res: Response): void {
   if (err instanceof Error) {
@@ -81,7 +67,7 @@ notesRouter.post("/", async (req: Request, res: Response) => {
     return;
   }
   try {
-    const note = await createNote(userId, title, content, categoryIds);
+    const note = await createNote(userId, title, content, categoryIds, req.user!.email);
     res.status(201).json(note);
   } catch (err) {
     handleNoteError(err, res);
