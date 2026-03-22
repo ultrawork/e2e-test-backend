@@ -86,6 +86,20 @@ test.describe("Database Migration - Category M:N", () => {
     expect(fkB.confdeltype).toBe("c"); // CASCADE
   });
 
+  test("SC-005: is_favorited column exists in notes table", async () => {
+    const result = await dbClient.query(
+      `SELECT column_name, data_type, is_nullable, column_default
+       FROM information_schema.columns
+       WHERE table_name = 'notes' AND column_name = 'is_favorited'`
+    );
+
+    expect(result.rows).toHaveLength(1);
+    const col = result.rows[0];
+    expect(col.data_type).toBe("boolean");
+    expect(col.is_nullable).toBe("NO");
+    expect(col.column_default).toBe("false");
+  });
+
   test("SC-004: Old category enum field removed from notes table", async () => {
     const result = await dbClient.query(
       `SELECT column_name

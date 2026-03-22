@@ -305,6 +305,42 @@ test.describe("Categories & Notes CRUD API", () => {
     expect((await r3.json()).error).toBeTruthy();
   });
 
+  test("SC-009: Toggle favorite", async ({ request }) => {
+    // Create a note
+    const createRes = await request.post(`${API_URL}/api/notes`, {
+      headers: authHeaders(),
+      data: { title: "Избранное тест", content: "Содержимое" },
+    });
+    expect(createRes.status()).toBe(201);
+    const created = await createRes.json();
+    expect(created.isFavorited).toBe(false);
+    const noteId = created.id;
+
+    // Toggle: false → true
+    const toggle1 = await request.patch(`${API_URL}/api/notes/${noteId}/favorite`, {
+      headers: authHeaders(),
+    });
+    expect(toggle1.status()).toBe(200);
+    const toggled1 = await toggle1.json();
+    expect(toggled1.isFavorited).toBe(true);
+
+    // Toggle: true → false
+    const toggle2 = await request.patch(`${API_URL}/api/notes/${noteId}/favorite`, {
+      headers: authHeaders(),
+    });
+    expect(toggle2.status()).toBe(200);
+    const toggled2 = await toggle2.json();
+    expect(toggled2.isFavorited).toBe(false);
+
+    // 404 for non-existent note
+    const fakeId = "00000000-0000-0000-0000-000000000000";
+    const toggle404 = await request.patch(`${API_URL}/api/notes/${fakeId}/favorite`, {
+      headers: authHeaders(),
+    });
+    expect(toggle404.status()).toBe(404);
+    expect((await toggle404.json()).error).toBeTruthy();
+  });
+
   test("SC-008: Update note categories via set", async ({ request }) => {
     // Create 3 categories
     const catARes = await request.post(`${API_URL}/api/categories`, {

@@ -99,6 +99,22 @@ export async function updateNote(
   });
 }
 
+/** Toggles the isFavorited flag on a note. Throws if not found or not owned. */
+export async function toggleFavorite(
+  id: string,
+  userId: string
+): Promise<NoteWithCategories> {
+  const existing = await prisma.note.findUnique({ where: { id } });
+  if (!existing || existing.userId !== userId) {
+    throw new Error("Note not found");
+  }
+  return prisma.note.update({
+    where: { id },
+    data: { isFavorited: !existing.isFavorited },
+    include: { categories: true },
+  });
+}
+
 /** Deletes a note. Throws if not found or forbidden. */
 export async function deleteNote(id: string, userId: string): Promise<void> {
   const existing = await prisma.note.findUnique({ where: { id } });
