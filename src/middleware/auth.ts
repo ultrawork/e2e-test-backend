@@ -1,14 +1,32 @@
 import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import { AuthPayload } from "../types";
+import { prisma } from "../lib/prisma";
 
-export function authMiddleware(
+const DEFAULT_JWT_SECRET = "e2e-test-secret-key-ultrawork";
+
+export async function authMiddleware(
   req: Request,
-  _res: Response,
+  res: Response,
   next: NextFunction
-): void {
-  // TODO: JWT token verification
-  // Set default user for dev mode until JWT is implemented
-  if (!req.user) {
-    req.user = { userId: "default-user-id", email: "dev@localhost" };
+): Promise<void> {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
   }
-  next();
+  const token = authHeader.slice(7);
+  const secret = process.env.JWT_SECRET || DEFAULT_JWT_SECRET;
+  try {
+    const payload = jwt.verify(token, secret) as AuthPayload;
+    await prisma.user.upsert({
+      where: { id: payload.userId },
+      update: {},
+      create: { id: payload.userId, email: payload.email, password: "" },
+    });
+    req.user = { userId: payload.userId, email: payload.email };
+    next();
+  } catch {
+    res.status(401).json({ error: "Unauthorized" });
+  }
 }
