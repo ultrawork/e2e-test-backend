@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
 const API_URL = process.env.API_URL || process.env.BASE_URL || "http://localhost:4000";
 
-function makeToken(userId = "e2e-user-1", email = "e2e@test.com"): string {
+function makeToken(userId = "default-user-id", email = "dev@localhost"): string {
   return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: "1h" });
 }
 
