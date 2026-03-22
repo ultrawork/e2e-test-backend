@@ -29,6 +29,8 @@ model Note {
 
   categories Category[]
 
+  isFavorited Boolean @default(false) @map("is_favorited")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

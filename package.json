@@ -11,7 +11,11 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "lint": "eslint src/ --ext .ts",
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests",
+    "seed": "ts-node-dev prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "ts-node-dev prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",
