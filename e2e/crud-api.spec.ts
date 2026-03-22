@@ -236,27 +236,49 @@ test.describe("Categories & Notes CRUD API", () => {
       headers: authHeaders(),
       data: { name: "Работа", color: "#FF0000" },
     });
+    expect(catWorkRes.status()).toBe(201);
     const catWork = (await catWorkRes.json()).id;
 
     const catPersonalRes = await request.post(`${API_URL}/api/categories`, {
       headers: authHeaders(),
       data: { name: "Личное", color: "#00FF00" },
     });
+    expect(catPersonalRes.status()).toBe(201);
     const catPersonal = (await catPersonalRes.json()).id;
 
-    // Create notes
-    await request.post(`${API_URL}/api/notes`, {
+    // Create notes without categories first
+    const workNoteRes = await request.post(`${API_URL}/api/notes`, {
       headers: authHeaders(),
-      data: { title: "Рабочая заметка", content: "work", categoryIds: [catWork] },
+      data: { title: "Рабочая заметка", content: "work" },
     });
-    await request.post(`${API_URL}/api/notes`, {
+    expect(workNoteRes.status()).toBe(201);
+    const workNoteId = (await workNoteRes.json()).id;
+
+    const personalNoteRes = await request.post(`${API_URL}/api/notes`, {
       headers: authHeaders(),
-      data: { title: "Личная заметка", content: "personal", categoryIds: [catPersonal] },
+      data: { title: "Личная заметка", content: "personal" },
     });
-    await request.post(`${API_URL}/api/notes`, {
+    expect(personalNoteRes.status()).toBe(201);
+    const personalNoteId = (await personalNoteRes.json()).id;
+
+    const noCatRes = await request.post(`${API_URL}/api/notes`, {
       headers: authHeaders(),
       data: { title: "Без категории", content: "none" },
     });
+    expect(noCatRes.status()).toBe(201);
+
+    // Connect categories to notes via PUT (using set)
+    const updateWorkRes = await request.put(`${API_URL}/api/notes/${workNoteId}`, {
+      headers: authHeaders(),
+      data: { title: "Рабочая заметка", content: "work", categoryIds: [catWork] },
+    });
+    expect(updateWorkRes.status()).toBe(200);
+
+    const updatePersonalRes = await request.put(`${API_URL}/api/notes/${personalNoteId}`, {
+      headers: authHeaders(),
+      data: { title: "Личная заметка", content: "personal", categoryIds: [catPersonal] },
+    });
+    expect(updatePersonalRes.status()).toBe(200);
 
     // Filter by work
     const workRes = await request.get(`${API_URL}/api/notes?category=${catWork}`, { headers: authHeaders() });
