@@ -106,4 +106,18 @@ test.describe("Database Migration - Category M:N", () => {
     expect(columnNames).toContain("created_at");
     expect(columnNames).toContain("updated_at");
   });
+
+  test("SC-005: notes table has is_favorited boolean column with default false", async () => {
+    const result = await dbClient.query(
+      `SELECT column_name, data_type, column_default
+       FROM information_schema.columns
+       WHERE table_name = 'notes' AND column_name = 'is_favorited'`
+    );
+
+    expect(result.rows).toHaveLength(1);
+
+    const col = result.rows[0];
+    expect(col.data_type).toBe("boolean");
+    expect(col.column_default).toBe("false");
+  });
 });
