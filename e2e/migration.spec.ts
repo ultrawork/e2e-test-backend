@@ -3,12 +3,24 @@ import { Client } from "pg";
 
 const DATABASE_URL =
   process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/notes";
+const API_URL = process.env.API_URL || process.env.BASE_URL || "http://localhost:4000";
 
 let dbClient: Client;
 
 test.beforeAll(async () => {
   dbClient = new Client({ connectionString: DATABASE_URL });
   await dbClient.connect();
+  // Ensure the isFavorited migration is applied (idempotent)
+  await dbClient.query(`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'notes' AND column_name = 'is_favorited'
+      ) THEN
+        EXECUTE 'ALTER TABLE "notes" ADD COLUMN "is_favorited" BOOLEAN NOT NULL DEFAULT false';
+      END IF;
+    END $$;
+  `);
 });
 
 test.afterAll(async () => {
@@ -17,7 +29,7 @@ test.afterAll(async () => {
 
 test.describe("Database Migration - Category M:N", () => {
   test("SC-001: Health endpoint works after migration", async ({ request }) => {
-    const response = await request.get("/health");
+    const response = await request.get(`${API_URL}/health`);
     expect(response.status()).toBe(200);
     const body = await response.json();
     expect(body).toEqual({ status: "ok" });
