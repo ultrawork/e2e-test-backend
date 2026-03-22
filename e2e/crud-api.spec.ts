@@ -455,23 +455,29 @@ test.describe("Categories & Notes CRUD API", () => {
 
   test("SC-010: Filter notes by favoritesOnly", async ({ request }) => {
     // Create two notes
-    const noteARes = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
-      data: { title: "Note A", content: "a" },
-    });
+    const noteARes = await retryOnRateLimit(() =>
+      request.post(`${API_URL}/api/notes`, {
+        headers: authHeaders(),
+        data: { title: "Note A", content: "a" },
+      })
+    );
     expect(noteARes.status()).toBe(201);
     const noteA = await noteARes.json();
 
-    const noteBRes = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
-      data: { title: "Note B", content: "b" },
-    });
+    const noteBRes = await retryOnRateLimit(() =>
+      request.post(`${API_URL}/api/notes`, {
+        headers: authHeaders(),
+        data: { title: "Note B", content: "b" },
+      })
+    );
     expect(noteBRes.status()).toBe(201);
 
     // Mark noteA as favorite
-    const toggleRes = await request.patch(`${API_URL}/api/notes/${noteA.id}/favorite`, {
-      headers: authHeaders(),
-    });
+    const toggleRes = await retryOnRateLimit(() =>
+      request.patch(`${API_URL}/api/notes/${noteA.id}/favorite`, {
+        headers: authHeaders(),
+      })
+    );
     expect(toggleRes.status()).toBe(200);
     expect((await toggleRes.json()).isFavorited).toBe(true);
 
