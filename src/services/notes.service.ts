@@ -99,6 +99,25 @@ export async function updateNote(
   });
 }
 
+/** Toggles isFavorited for a note. Throws "Note not found" if missing or belongs to another user. */
+export async function toggleFavorite(
+  noteId: string,
+  userId: string
+): Promise<NoteWithCategories> {
+  const note = await prisma.note.findFirst({
+    where: { id: noteId, userId },
+    include: { categories: true },
+  });
+  if (!note) {
+    throw new Error("Note not found");
+  }
+  return prisma.note.update({
+    where: { id: noteId },
+    data: { isFavorited: !note.isFavorited },
+    include: { categories: true },
+  });
+}
+
 /** Deletes a note. Throws if not found or forbidden. */
 export async function deleteNote(id: string, userId: string): Promise<void> {
   const existing = await prisma.note.findUnique({ where: { id } });

@@ -15,6 +15,7 @@ jest.mock("../services/notes.service", () => ({
   createNote: jest.fn(),
   updateNote: jest.fn(),
   deleteNote: jest.fn(),
+  toggleFavorite: jest.fn(),
 }));
 
 import {
@@ -23,6 +24,7 @@ import {
   createNote,
   updateNote,
   deleteNote,
+  toggleFavorite,
 } from "../services/notes.service";
 
 const mockList = listNotes as jest.Mock;
@@ -30,6 +32,7 @@ const mockGetById = getNoteById as jest.Mock;
 const mockCreate = createNote as jest.Mock;
 const mockUpdate = updateNote as jest.Mock;
 const mockDelete = deleteNote as jest.Mock;
+const mockToggleFavorite = toggleFavorite as jest.Mock;
 
 const app = express();
 app.use(express.json());
@@ -155,6 +158,41 @@ describe("PUT /notes/:id", () => {
       .put("/notes/1")
       .send({ title: "Updated", content: "New" });
     expect(res.status).toBe(404);
+  });
+});
+
+describe("PATCH /notes/:id/favorite", () => {
+  it("returns 200 and toggles isFavorited to true", async () => {
+    const note = {
+      id: "1",
+      title: "Test",
+      content: "Body",
+      isFavorited: true,
+      categories: [],
+    };
+    mockToggleFavorite.mockResolvedValue(note);
+
+    const res = await request(app).patch("/notes/1/favorite");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(note);
+    expect(res.body.isFavorited).toBe(true);
+    expect(mockToggleFavorite).toHaveBeenCalledWith("1", "user-1");
+  });
+
+  it("returns 404 when note not found", async () => {
+    mockToggleFavorite.mockRejectedValue(new Error("Note not found"));
+
+    const res = await request(app).patch("/notes/unknown-id/favorite");
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: "Note not found" });
+  });
+
+  it("returns 404 when toggling another user's note (masking 403)", async () => {
+    mockToggleFavorite.mockRejectedValue(new Error("Note not found"));
+
+    const res = await request(app).patch("/notes/other-user-note/favorite");
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: "Note not found" });
   });
 });
 

@@ -6,6 +6,7 @@ import {
   createNote,
   updateNote,
   deleteNote,
+  toggleFavorite,
 } from "../services/notes.service";
 
 const notesRouter = Router();
@@ -97,6 +98,16 @@ notesRouter.put("/:id", async (req: Request, res: Response) => {
       content,
       categoryIds
     );
+    res.json(note);
+  } catch (err) {
+    handleNoteError(err, res);
+  }
+});
+
+notesRouter.patch("/:id/favorite", async (req: Request, res: Response) => {
+  const userId = req.user!.userId;
+  try {
+    const note = await toggleFavorite(req.params.id, userId);
     res.json(note);
   } catch (err) {
     handleNoteError(err, res);
