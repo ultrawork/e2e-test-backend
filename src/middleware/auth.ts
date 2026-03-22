@@ -5,8 +5,16 @@ export function authMiddleware(
   _res: Response,
   next: NextFunction
 ): void {
-  // TODO: JWT token verification
-  // Set default user for dev mode until JWT is implemented
+  const devToken = process.env.DEV_API_TOKEN;
+  if (devToken) {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader === `Bearer ${devToken}`) {
+      req.user = { userId: "default-user-id", email: "dev@localhost" };
+      next();
+      return;
+    }
+  }
+
   if (!req.user) {
     req.user = { userId: "default-user-id", email: "dev@localhost" };
   }
