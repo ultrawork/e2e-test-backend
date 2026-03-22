@@ -18,6 +18,20 @@ function authHeaders() {
   };
 }
 
+// Retry helper for rate-limited (429) responses
+async function retryOnRateLimit<T>(
+  fn: () => Promise<T & { status: () => number }>,
+  maxRetries = 5,
+  delayMs = 2000
+): Promise<T & { status: () => number }> {
+  for (let i = 0; i < maxRetries; i++) {
+    const res = await fn();
+    if (res.status() !== 429) return res;
+    await new Promise((r) => setTimeout(r, delayMs));
+  }
+  return fn();
+}
+
 // Helper to clean up categories and notes between tests
 async function cleanupCategories(request: any) {
   const res = await request.get(`${API_URL}/api/categories`, { headers: authHeaders() });
@@ -398,36 +412,44 @@ test.describe("Categories & Notes CRUD API", () => {
 
   test("SC-009: Toggle favorite on a note", async ({ request }) => {
     // Create a note — isFavorited defaults to false
-    const createRes = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
-      data: { title: "Favorite test", content: "body" },
-    });
+    const createRes = await retryOnRateLimit(() =>
+      request.post(`${API_URL}/api/notes`, {
+        headers: authHeaders(),
+        data: { title: "Favorite test", content: "body" },
+      })
+    );
     expect(createRes.status()).toBe(201);
     const note = await createRes.json();
     expect(note.isFavorited).toBe(false);
     const noteId = note.id;
 
     // First toggle → true
-    const toggle1 = await request.patch(`${API_URL}/api/notes/${noteId}/favorite`, {
-      headers: authHeaders(),
-    });
+    const toggle1 = await retryOnRateLimit(() =>
+      request.patch(`${API_URL}/api/notes/${noteId}/favorite`, {
+        headers: authHeaders(),
+      })
+    );
     expect(toggle1.status()).toBe(200);
     const toggled1 = await toggle1.json();
     expect(toggled1.isFavorited).toBe(true);
 
     // Second toggle → false
-    const toggle2 = await request.patch(`${API_URL}/api/notes/${noteId}/favorite`, {
-      headers: authHeaders(),
-    });
+    const toggle2 = await retryOnRateLimit(() =>
+      request.patch(`${API_URL}/api/notes/${noteId}/favorite`, {
+        headers: authHeaders(),
+      })
+    );
     expect(toggle2.status()).toBe(200);
     const toggled2 = await toggle2.json();
     expect(toggled2.isFavorited).toBe(false);
 
     // Toggle non-existent note → 404
     const fakeId = "00000000-0000-0000-0000-000000000000";
-    const toggle404 = await request.patch(`${API_URL}/api/notes/${fakeId}/favorite`, {
-      headers: authHeaders(),
-    });
+    const toggle404 = await retryOnRateLimit(() =>
+      request.patch(`${API_URL}/api/notes/${fakeId}/favorite`, {
+        headers: authHeaders(),
+      })
+    );
     expect(toggle404.status()).toBe(404);
   });
 
