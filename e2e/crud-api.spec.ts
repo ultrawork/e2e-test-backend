@@ -1,8 +1,11 @@
 import { test, expect } from "@playwright/test";
 import jwt from "jsonwebtoken";
+import { Client } from "pg";
 
 const JWT_SECRET = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
 const API_URL = process.env.API_URL || process.env.BASE_URL || "http://localhost:4000";
+const DATABASE_URL =
+  process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/notes";
 
 function makeToken(userId = "e2e-user-1", email = "e2e@test.com"): string {
   return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: "1h" });
@@ -37,6 +40,28 @@ async function cleanupNotes(request: any) {
 }
 
 test.describe("Categories & Notes CRUD API", () => {
+  let dbClient: Client;
+
+  test.beforeAll(async () => {
+    dbClient = new Client({ connectionString: DATABASE_URL });
+    await dbClient.connect();
+    // Ensure the isFavorited migration is applied (idempotent)
+    await dbClient.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'notes' AND column_name = 'is_favorited'
+        ) THEN
+          EXECUTE 'ALTER TABLE "notes" ADD COLUMN "is_favorited" BOOLEAN NOT NULL DEFAULT false';
+        END IF;
+      END $$;
+    `);
+  });
+
+  test.afterAll(async () => {
+    await dbClient.end();
+  });
+
   test.beforeEach(async ({ request }) => {
     await cleanupNotes(request);
     await cleanupCategories(request);
