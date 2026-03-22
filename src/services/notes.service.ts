@@ -1,15 +1,17 @@
 import { prisma } from "../lib/prisma";
 import { NoteWithCategories } from "../models/note";
 
-/** Returns notes for a user, optionally filtered by category id. */
+/** Returns notes for a user, optionally filtered by category id and/or favorites. */
 export async function listNotes(
   userId: string,
-  categoryId?: string
+  categoryId?: string,
+  favoritesOnly?: boolean
 ): Promise<NoteWithCategories[]> {
   return prisma.note.findMany({
     where: {
       userId,
       ...(categoryId ? { categories: { some: { id: categoryId } } } : {}),
+      ...(favoritesOnly ? { isFavorited: true } : {}),
     },
     include: { categories: true },
   });
@@ -109,4 +111,26 @@ export async function deleteNote(id: string, userId: string): Promise<void> {
     throw new Error("Forbidden");
   }
   await prisma.note.delete({ where: { id } });
+}
+
+/** Toggles the isFavorited flag on a note. Throws if not found or forbidden. */
+export async function toggleFavorite(
+  id: string,
+  userId: string
+): Promise<NoteWithCategories> {
+  const note = await prisma.note.findUnique({
+    where: { id },
+    include: { categories: true },
+  });
+  if (!note) {
+    throw new Error("Note not found");
+  }
+  if (note.userId !== userId) {
+    throw new Error("Forbidden");
+  }
+  return prisma.note.update({
+    where: { id },
+    data: { isFavorited: !note.isFavorited },
+    include: { categories: true },
+  });
 }

@@ -360,4 +360,85 @@ test.describe("Categories & Notes CRUD API", () => {
     const cleared = await clearRes.json();
     expect(cleared.categories).toHaveLength(0);
   });
+
+  test("SC-009: Toggle favorite on a note", async ({ request }) => {
+    // Create a note — isFavorited defaults to false
+    const createRes = await request.post(`${API_URL}/api/notes`, {
+      headers: authHeaders(),
+      data: { title: "Favorite test", content: "body" },
+    });
+    expect(createRes.status()).toBe(201);
+    const note = await createRes.json();
+    expect(note.isFavorited).toBe(false);
+    const noteId = note.id;
+
+    // First toggle → true
+    const toggle1 = await request.patch(`${API_URL}/api/notes/${noteId}/favorite`, {
+      headers: authHeaders(),
+    });
+    expect(toggle1.status()).toBe(200);
+    const toggled1 = await toggle1.json();
+    expect(toggled1.isFavorited).toBe(true);
+
+    // Second toggle → false
+    const toggle2 = await request.patch(`${API_URL}/api/notes/${noteId}/favorite`, {
+      headers: authHeaders(),
+    });
+    expect(toggle2.status()).toBe(200);
+    const toggled2 = await toggle2.json();
+    expect(toggled2.isFavorited).toBe(false);
+
+    // Toggle non-existent note → 404
+    const fakeId = "00000000-0000-0000-0000-000000000000";
+    const toggle404 = await request.patch(`${API_URL}/api/notes/${fakeId}/favorite`, {
+      headers: authHeaders(),
+    });
+    expect(toggle404.status()).toBe(404);
+  });
+
+  test("SC-010: Filter notes by favoritesOnly", async ({ request }) => {
+    // Create two notes
+    const noteARes = await request.post(`${API_URL}/api/notes`, {
+      headers: authHeaders(),
+      data: { title: "Note A", content: "a" },
+    });
+    expect(noteARes.status()).toBe(201);
+    const noteA = await noteARes.json();
+
+    const noteBRes = await request.post(`${API_URL}/api/notes`, {
+      headers: authHeaders(),
+      data: { title: "Note B", content: "b" },
+    });
+    expect(noteBRes.status()).toBe(201);
+
+    // Mark noteA as favorite
+    const toggleRes = await request.patch(`${API_URL}/api/notes/${noteA.id}/favorite`, {
+      headers: authHeaders(),
+    });
+    expect(toggleRes.status()).toBe(200);
+    expect((await toggleRes.json()).isFavorited).toBe(true);
+
+    // GET all notes — should return 2
+    const allRes = await request.get(`${API_URL}/api/notes`, { headers: authHeaders() });
+    expect(allRes.status()).toBe(200);
+    const allNotes = await allRes.json();
+    expect(allNotes).toHaveLength(2);
+
+    // GET with favoritesOnly=true — should return only noteA
+    const favRes = await request.get(`${API_URL}/api/notes?favoritesOnly=true`, {
+      headers: authHeaders(),
+    });
+    expect(favRes.status()).toBe(200);
+    const favNotes = await favRes.json();
+    expect(favNotes).toHaveLength(1);
+    expect(favNotes[0].id).toBe(noteA.id);
+
+    // GET with favoritesOnly=false — should return all
+    const nonFavRes = await request.get(`${API_URL}/api/notes?favoritesOnly=false`, {
+      headers: authHeaders(),
+    });
+    expect(nonFavRes.status()).toBe(200);
+    const nonFavNotes = await nonFavRes.json();
+    expect(nonFavNotes).toHaveLength(2);
+  });
 });

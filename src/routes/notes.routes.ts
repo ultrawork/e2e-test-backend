@@ -6,6 +6,7 @@ import {
   createNote,
   updateNote,
   deleteNote,
+  toggleFavorite,
 } from "../services/notes.service";
 
 const notesRouter = Router();
@@ -33,8 +34,9 @@ function handleNoteError(err: unknown, res: Response): void {
 notesRouter.get("/", async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const categoryId = req.query.category as string | undefined;
+  const favoritesOnly = req.query.favoritesOnly === "true";
   try {
-    const notes = await listNotes(userId, categoryId);
+    const notes = await listNotes(userId, categoryId, favoritesOnly);
     res.json(notes);
   } catch {
     res.status(500).json({ error: "Internal server error" });
@@ -97,6 +99,16 @@ notesRouter.put("/:id", async (req: Request, res: Response) => {
       content,
       categoryIds
     );
+    res.json(note);
+  } catch (err) {
+    handleNoteError(err, res);
+  }
+});
+
+notesRouter.patch("/:id/favorite", async (req: Request, res: Response) => {
+  const userId = req.user!.userId;
+  try {
+    const note = await toggleFavorite(req.params.id, userId);
     res.json(note);
   } catch (err) {
     handleNoteError(err, res);

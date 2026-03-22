@@ -15,6 +15,7 @@ jest.mock("../services/notes.service", () => ({
   createNote: jest.fn(),
   updateNote: jest.fn(),
   deleteNote: jest.fn(),
+  toggleFavorite: jest.fn(),
 }));
 
 import {
@@ -23,6 +24,7 @@ import {
   createNote,
   updateNote,
   deleteNote,
+  toggleFavorite,
 } from "../services/notes.service";
 
 const mockList = listNotes as jest.Mock;
@@ -30,6 +32,7 @@ const mockGetById = getNoteById as jest.Mock;
 const mockCreate = createNote as jest.Mock;
 const mockUpdate = updateNote as jest.Mock;
 const mockDelete = deleteNote as jest.Mock;
+const mockToggle = toggleFavorite as jest.Mock;
 
 const app = express();
 app.use(express.json());
@@ -45,14 +48,21 @@ describe("GET /notes", () => {
     const res = await request(app).get("/notes");
     expect(res.status).toBe(200);
     expect(res.body).toEqual(notes);
-    expect(mockList).toHaveBeenCalledWith("user-1", undefined);
+    expect(mockList).toHaveBeenCalledWith("user-1", undefined, false);
   });
 
   it("passes category filter to service", async () => {
     mockList.mockResolvedValue([]);
 
     await request(app).get("/notes?category=cat-1");
-    expect(mockList).toHaveBeenCalledWith("user-1", "cat-1");
+    expect(mockList).toHaveBeenCalledWith("user-1", "cat-1", false);
+  });
+
+  it("passes favoritesOnly=true filter to service", async () => {
+    mockList.mockResolvedValue([]);
+
+    await request(app).get("/notes?favoritesOnly=true");
+    expect(mockList).toHaveBeenCalledWith("user-1", undefined, true);
   });
 });
 
@@ -155,6 +165,54 @@ describe("PUT /notes/:id", () => {
       .put("/notes/1")
       .send({ title: "Updated", content: "New" });
     expect(res.status).toBe(404);
+  });
+});
+
+describe("PATCH /notes/:id/favorite", () => {
+  it("returns 200 with toggled note", async () => {
+    const note = {
+      id: "1",
+      title: "Test",
+      content: "Body",
+      isFavorited: true,
+      categories: [],
+    };
+    mockToggle.mockResolvedValue(note);
+
+    const res = await request(app).patch("/notes/1/favorite");
+    expect(res.status).toBe(200);
+    expect(res.body.isFavorited).toBe(true);
+  });
+
+  it("returns 200 on second toggle (back to false)", async () => {
+    const note = {
+      id: "1",
+      title: "Test",
+      content: "Body",
+      isFavorited: false,
+      categories: [],
+    };
+    mockToggle.mockResolvedValue(note);
+
+    const res = await request(app).patch("/notes/1/favorite");
+    expect(res.status).toBe(200);
+    expect(res.body.isFavorited).toBe(false);
+  });
+
+  it("returns 404 when note not found", async () => {
+    mockToggle.mockRejectedValue(new Error("Note not found"));
+
+    const res = await request(app).patch("/notes/999/favorite");
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: "Note not found" });
+  });
+
+  it("returns 403 when note belongs to another user", async () => {
+    mockToggle.mockRejectedValue(new Error("Forbidden"));
+
+    const res = await request(app).patch("/notes/1/favorite");
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({ error: "Forbidden" });
   });
 });
 
