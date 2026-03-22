@@ -1,15 +1,16 @@
 import { test, expect } from "@playwright/test";
+import jwt from "jsonwebtoken";
 
+const JWT_SECRET = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
 const API_URL = process.env.API_URL || process.env.BASE_URL || "http://localhost:4000";
 
-const TEST_EMAIL = "e2e@test.com";
-const TEST_PASSWORD = "e2e-password-123";
-
-let currentToken: string = "";
+function makeToken(userId = "e2e-user-1", email = "e2e@test.com"): string {
+  return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: "1h" });
+}
 
 function authHeaders() {
   return {
-    Authorization: `Bearer ${currentToken}`,
+    Authorization: `Bearer ${makeToken()}`,
     "Content-Type": "application/json",
   };
 }
@@ -36,23 +37,6 @@ async function cleanupNotes(request: any) {
 }
 
 test.describe("Categories & Notes CRUD API", () => {
-  test.beforeAll(async ({ request }) => {
-    // Try to register; fall back to login if already registered
-    const regRes = await request.post(`${API_URL}/api/auth/register`, {
-      data: { email: TEST_EMAIL, password: TEST_PASSWORD },
-    });
-    if (regRes.status() === 201) {
-      currentToken = (await regRes.json()).token;
-    } else {
-      const loginRes = await request.post(`${API_URL}/api/auth/login`, {
-        data: { email: TEST_EMAIL, password: TEST_PASSWORD },
-      });
-      expect(loginRes.status()).toBe(200);
-      currentToken = (await loginRes.json()).token;
-    }
-    expect(currentToken).toBeTruthy();
-  });
-
   test.beforeEach(async ({ request }) => {
     await cleanupNotes(request);
     await cleanupCategories(request);

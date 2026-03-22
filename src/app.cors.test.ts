@@ -59,10 +59,7 @@ describe("CORS middleware", () => {
         .get("/health")
         .set("Origin", "http://evil.com");
 
-      // The cors middleware throws an Error for disallowed origins; Express
-      // catches it and responds with 500. A 403 would require a custom error
-      // handler — the current cors() callback uses Error, not createError(403).
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(403);
     });
 
     it("allows requests without Origin header", async () => {
@@ -128,9 +125,7 @@ describe("CORS middleware", () => {
         .get("/health")
         .set("Origin", "http://evil.com");
 
-      // 500 because cors middleware throws an Error (not a 403 HttpError);
-      // see "blocks disallowed origin" test above for full explanation.
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(403);
     });
   });
 });

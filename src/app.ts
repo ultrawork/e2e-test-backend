@@ -21,7 +21,8 @@ const corsOptions: CorsOptions = {
     if (!corsList) return callback(null, true);
     if (!origin) return callback(null, true);
     if (corsList.includes(origin)) return callback(null, true);
-    return callback(new Error("Not allowed by CORS"));
+    const corsError = Object.assign(new Error("Not allowed by CORS"), { status: 403 });
+    return callback(corsError);
   },
   optionsSuccessStatus: 204,
 };

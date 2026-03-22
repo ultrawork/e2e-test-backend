@@ -1,13 +1,6 @@
 import request from "supertest";
-import express, { Request, Response, NextFunction } from "express";
+import express from "express";
 import { categoriesRouter } from "./categories.routes";
-
-jest.mock("../middleware/auth", () => ({
-  authMiddleware: (req: Request, _res: Response, next: NextFunction) => {
-    req.user = { userId: "user-1", email: "test@test.com" };
-    next();
-  },
-}));
 
 jest.mock("../services/categories.service", () => ({
   validateCategoryInput: jest.fn(),
