@@ -56,6 +56,12 @@ test.describe("Categories & Notes CRUD API", () => {
         END IF;
       END $$;
     `);
+    // Ensure the default user exists (auth middleware uses "default-user-id")
+    await dbClient.query(`
+      INSERT INTO users (id, email, password, created_at, updated_at)
+      VALUES ('default-user-id', 'dev@localhost', 'password', NOW(), NOW())
+      ON CONFLICT (id) DO NOTHING;
+    `);
   });
 
   test.afterAll(async () => {
