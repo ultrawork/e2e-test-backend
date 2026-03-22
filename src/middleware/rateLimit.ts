@@ -1,10 +1,10 @@
 import rateLimit from "express-rate-limit";
 
-const isTest = process.env.NODE_ENV === "test";
+const isProduction = process.env.NODE_ENV === "production";
 
 export const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: isTest ? 10000 : 100,
+  max: isProduction ? 100 : 10000,
   standardHeaders: true,
   legacyHeaders: false,
 });

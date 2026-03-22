@@ -40,7 +40,7 @@ All schema changes, migrations, service logic, routes, seed data, and E2E test s
 | SC-008   | Update note categories via set        | READY   |
 | SC-009   | Toggle favorite (false->true->false + 404) | READY |
 
-## Toggle Favorite E2E Scenarios (toggle-favorite.spec.ts)
+## Toggle Favorite E2E Scenarios (toggle-favorite.spec.ts + toggle-favorite-isolation.spec.ts)
 
 | Scenario | Description                              | Status  |
 |----------|------------------------------------------|---------|
@@ -48,6 +48,7 @@ All schema changes, migrations, service logic, routes, seed data, and E2E test s
 | SC-002   | Toggle favorite for non-existent note returns 404  | READY |
 | SC-003   | New note has isFavorited=false by default          | READY |
 | SC-004   | isFavorited preserved when updating note           | READY |
+| SC-005   | User isolation — User B cannot toggle User A's note | READY |
 
 ## Seed Verification (seed-verification.spec.ts)
 
@@ -66,7 +67,7 @@ All schema changes, migrations, service logic, routes, seed data, and E2E test s
 
 | Issue | Fix |
 |-------|-----|
-| Rate limiter (100 req/min) exceeded by E2E cleanup | Increased to 10000 in test env (`NODE_ENV=test`) |
+| Rate limiter (100 req/min) exceeded by E2E cleanup | Increased to 10000 in non-production env (default for Docker/E2E) |
 | Auth middleware not parsing JWT tokens | Added JWT verification with fallback to default user |
 | API responses missing isFavorited | Prisma client regenerated with isFavorited field |
 | Config missing default JWT secret | Added default `e2e-test-secret-key-ultrawork` |
@@ -76,7 +77,8 @@ All schema changes, migrations, service logic, routes, seed data, and E2E test s
 ### New Files
 - `prisma/migrations/20250322000000_add_is_favorited/migration.sql` — adds `is_favorited` column
 - `prisma/seed.ts` — idempotent seed with upsert
-- `e2e/toggle-favorite.spec.ts` — toggle favorite E2E tests
+- `e2e/toggle-favorite.spec.ts` — toggle favorite E2E tests (SC-001..SC-004)
+- `e2e/toggle-favorite-isolation.spec.ts` — user isolation E2E test (SC-005)
 - `e2e/seed-verification.spec.ts` — seed data verification E2E test
 - `e2e/reports/backend-e2e-verification-20260322.md` — this report
 
@@ -86,7 +88,7 @@ All schema changes, migrations, service logic, routes, seed data, and E2E test s
 - `src/routes/notes.routes.ts` — added `PATCH /:id/favorite` route
 - `src/routes/notes.routes.test.ts` — added unit tests for toggle favorite
 - `src/middleware/auth.ts` — added JWT token verification with dev fallback
-- `src/middleware/rateLimit.ts` — increased rate limit for test environment
+- `src/middleware/rateLimit.ts` — increased rate limit for non-production environments
 - `src/config/index.ts` — added default JWT secret for E2E tests
 - `e2e/crud-api.spec.ts` — added SC-009 toggle favorite E2E test
 - `e2e/migration.spec.ts` — added SC-005 is_favorited column verification
@@ -94,4 +96,4 @@ All schema changes, migrations, service logic, routes, seed data, and E2E test s
 
 ## Conclusion
 
-All 9 CRUD API scenarios (SC-001..SC-009), 5 migration scenarios (SC-001..SC-005), 4 toggle-favorite scenarios, and 1 seed verification scenario are implemented and ready for E2E execution against a running PostgreSQL instance. Unit tests (39/39) pass. Build and lint are clean. Verifier feedback issues have been addressed.
+All 9 CRUD API scenarios (SC-001..SC-009), 5 migration scenarios (SC-001..SC-005), 5 toggle-favorite scenarios (SC-001..SC-005 including user isolation), and 1 seed verification scenario are implemented and ready for E2E execution against a running PostgreSQL instance. Unit tests (39/39) pass. Build and lint are clean. Verifier feedback issues have been addressed.
