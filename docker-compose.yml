@@ -8,6 +8,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       PORT: "3000"
       NODE_ENV: ${NODE_ENV:-development}
+      DEV_API_TOKEN: ${DEV_API_TOKEN:-dev-secret-token-change-me}
     depends_on:
       db:
         condition: service_healthy
