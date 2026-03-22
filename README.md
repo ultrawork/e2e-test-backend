@@ -123,6 +123,47 @@ docker compose exec backend npx prisma migrate deploy
 └── tsconfig.json
 ```
 
+## CORS
+
+Cross-Origin Resource Sharing is controlled by the `CORS_ORIGIN` environment variable.
+
+| Value | Behaviour |
+|---|---|
+| unset | All origins allowed |
+| `*` | All origins allowed (explicit wildcard) |
+| `http://localhost:3000` | Single origin whitelisted |
+| `http://localhost:3000,http://localhost:3001` | Multiple origins (comma-separated) |
+
+Requests without an `Origin` header (curl, native iOS/Android apps) are always allowed.
+
+**Android emulator:** when testing a web client inside the Android emulator browser that calls the API on the host machine, add `http://10.0.2.2:3000` to the list:
+
+```
+CORS_ORIGIN=http://localhost:3000,http://10.0.2.2:3000
+```
+
+### Verifying CORS with curl
+
+**Preflight request (OPTIONS):**
+
+```bash
+curl -i -X OPTIONS http://localhost:3000/api/notes \
+  -H "Origin: http://localhost:3000" \
+  -H "Access-Control-Request-Method: GET"
+# Expected: HTTP/1.1 204 No Content
+# Expected header: Access-Control-Allow-Origin: http://localhost:3000
+```
+
+**Simple GET request:**
+
+```bash
+curl -i http://localhost:3000/api/notes \
+  -H "Origin: http://localhost:3000"
+# Expected header in response: Access-Control-Allow-Origin: http://localhost:3000
+```
+
+**Browser check:** start the backend (`npm run dev`), open your web client at the configured origin, and confirm there are no CORS errors in the browser console (DevTools → Console).
+
 ## Environment Variables
 
 See [.env.example](.env.example) for the full list of required environment variables.
