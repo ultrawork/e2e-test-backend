@@ -79,7 +79,7 @@ test.describe("CORS Middleware E2E", () => {
     expect(acao).toBeTruthy();
   });
 
-  test("SC-007: Preflight for protected endpoint does not require auth", async ({
+  test("SC-006: Preflight for protected endpoint does not require auth", async ({
     request,
   }) => {
     const res = await request.fetch(`${API_URL}/api/notes`, {

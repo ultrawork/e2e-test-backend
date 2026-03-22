@@ -147,7 +147,7 @@ CORS_ORIGIN=http://localhost:3000,http://10.0.2.2:3000
 **Preflight request (OPTIONS):**
 
 ```bash
-curl -i -X OPTIONS http://localhost:3000/api/notes \
+curl -i -X OPTIONS http://localhost:4000/api/notes \
   -H "Origin: http://localhost:3000" \
   -H "Access-Control-Request-Method: GET"
 # Expected: HTTP/1.1 204 No Content
@@ -157,7 +157,7 @@ curl -i -X OPTIONS http://localhost:3000/api/notes \
 **Simple GET request:**
 
 ```bash
-curl -i http://localhost:3000/api/notes \
+curl -i http://localhost:4000/api/notes \
   -H "Origin: http://localhost:3000"
 # Expected header in response: Access-Control-Allow-Origin: http://localhost:3000
 ```
