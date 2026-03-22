@@ -18,6 +18,20 @@ function authHeaders() {
   };
 }
 
+// Retry helper for rate-limited (429) responses
+async function retryOnRateLimit<T>(
+  fn: () => Promise<T & { status: () => number }>,
+  maxRetries = 5,
+  delayMs = 2000
+): Promise<T & { status: () => number }> {
+  for (let i = 0; i < maxRetries; i++) {
+    const res = await fn();
+    if (res.status() !== 429) return res;
+    await new Promise((r) => setTimeout(r, delayMs));
+  }
+  return fn();
+}
+
 async function cleanupNotes(request: any) {
   const res = await request.get(`${API_URL}/api/notes`, { headers: authHeaders() });
   if (res.ok()) {
@@ -34,10 +48,27 @@ test.describe("Favorites: toggle & filter", () => {
   test.beforeAll(async () => {
     dbClient = new Client({ connectionString: DATABASE_URL });
     await dbClient.connect();
+    // Ensure the isFavorited migration is applied (idempotent)
+    await dbClient.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'notes' AND column_name = 'is_favorited'
+        ) THEN
+          EXECUTE 'ALTER TABLE "notes" ADD COLUMN "is_favorited" BOOLEAN NOT NULL DEFAULT false';
+        END IF;
+      END $$;
+    `);
     // Ensure the default user exists (auth middleware uses "default-user-id")
     await dbClient.query(`
       INSERT INTO users (id, email, password, created_at, updated_at)
       VALUES ('default-user-id', 'dev@localhost', 'password', NOW(), NOW())
+      ON CONFLICT (id) DO NOTHING;
+    `);
+    // Ensure the e2e-fav-user exists (used by this spec's JWT tokens)
+    await dbClient.query(`
+      INSERT INTO users (id, email, password, created_at, updated_at)
+      VALUES ('e2e-fav-user', 'fav@test.com', 'password', NOW(), NOW())
       ON CONFLICT (id) DO NOTHING;
     `);
   });
@@ -52,10 +83,12 @@ test.describe("Favorites: toggle & filter", () => {
 
   test("SC-009: Toggle favorite — cycle on/off", async ({ request }) => {
     // Create a note — isFavorited defaults to false
-    const createRes = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
-      data: { title: "Favorite cycle", content: "body" },
-    });
+    const createRes = await retryOnRateLimit(() =>
+      request.post(`${API_URL}/api/notes`, {
+        headers: authHeaders(),
+        data: { title: "Favorite cycle", content: "body" },
+      })
+    );
     expect(createRes.status()).toBe(201);
     const note = await createRes.json();
     expect(note.isFavorited).toBe(false);
