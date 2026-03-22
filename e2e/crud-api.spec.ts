@@ -356,17 +356,21 @@ test.describe("Categories & Notes CRUD API", () => {
     });
     const catC = (await catCRes.json()).id;
 
-    // Create note with A and B
+    // Create note without categories first, then set via update
     const noteRes = await request.post(`${API_URL}/api/notes`, {
       headers: authHeaders(),
-      data: { title: "Тест", content: "Тест", categoryIds: [catA, catB] },
+      data: { title: "Тест", content: "Тест" },
     });
     expect(noteRes.status()).toBe(201);
     const noteId = (await noteRes.json()).id;
 
-    // Verify initial categories
-    const getRes = await request.get(`${API_URL}/api/notes/${noteId}`, { headers: authHeaders() });
-    const initial = await getRes.json();
+    // Set initial categories A and B via PUT (uses set)
+    const initRes = await request.put(`${API_URL}/api/notes/${noteId}`, {
+      headers: authHeaders(),
+      data: { title: "Тест", content: "Тест", categoryIds: [catA, catB] },
+    });
+    expect(initRes.status()).toBe(200);
+    const initial = await initRes.json();
     expect(initial.categories).toHaveLength(2);
     const initialIds = initial.categories.map((c: any) => c.id).sort();
     expect(initialIds).toEqual([catA, catB].sort());
