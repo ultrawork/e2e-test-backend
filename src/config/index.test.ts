@@ -1,69 +1,48 @@
-import { config } from "./index";
+import { parseCorsOrigins, config } from "./index";
 
-describe("config.corsOrigins", () => {
-  const originalEnv = process.env;
-
-  beforeEach(() => {
-    jest.resetModules();
-    process.env = { ...originalEnv };
+describe("parseCorsOrigins", () => {
+  it("returns true when input is undefined", () => {
+    expect(parseCorsOrigins(undefined)).toBe(true);
   });
 
-  afterAll(() => {
-    process.env = originalEnv;
+  it("returns true when input is empty string", () => {
+    expect(parseCorsOrigins("")).toBe(true);
   });
 
-  it("returns true when CORS_ORIGINS is not set", async () => {
-    delete process.env.CORS_ORIGINS;
-    const { config: freshConfig } = await import("./index");
-    expect(freshConfig.corsOrigins).toBe(true);
+  it("returns true when input is whitespace only", () => {
+    expect(parseCorsOrigins("   ")).toBe(true);
   });
 
-  it("returns true when CORS_ORIGINS is empty string", async () => {
-    process.env.CORS_ORIGINS = "";
-    const { config: freshConfig } = await import("./index");
-    expect(freshConfig.corsOrigins).toBe(true);
+  it("returns '*' when input is '*'", () => {
+    expect(parseCorsOrigins("*")).toBe("*");
   });
 
-  it("returns '*' when CORS_ORIGINS is '*'", async () => {
-    process.env.CORS_ORIGINS = "*";
-    const { config: freshConfig } = await import("./index");
-    expect(freshConfig.corsOrigins).toBe("*");
+  it("returns single origin string as-is", () => {
+    expect(parseCorsOrigins("http://localhost:3000")).toBe(
+      "http://localhost:3000"
+    );
   });
 
-  it("returns single string when CORS_ORIGINS has one value", async () => {
-    process.env.CORS_ORIGINS = "http://localhost:3000";
-    const { config: freshConfig } = await import("./index");
-    expect(freshConfig.corsOrigins).toBe("http://localhost:3000");
-  });
-
-  it("returns array when CORS_ORIGINS has comma-separated values", async () => {
-    process.env.CORS_ORIGINS = "http://localhost:3000,http://localhost:3001";
-    const { config: freshConfig } = await import("./index");
-    expect(freshConfig.corsOrigins).toEqual([
-      "http://localhost:3000",
-      "http://localhost:3001",
+  it("returns array for comma-separated origins", () => {
+    expect(parseCorsOrigins("http://a.com, http://b.com")).toEqual([
+      "http://a.com",
+      "http://b.com",
     ]);
   });
 
-  it("trims whitespace from values in comma-separated list", async () => {
-    process.env.CORS_ORIGINS = " http://localhost:3000 , http://localhost:3001 ";
-    const { config: freshConfig } = await import("./index");
-    expect(freshConfig.corsOrigins).toEqual([
-      "http://localhost:3000",
-      "http://localhost:3001",
-    ]);
+  it("trims whitespace and filters empty elements from list", () => {
+    expect(
+      parseCorsOrigins(" http://a.com , , http://b.com , ")
+    ).toEqual(["http://a.com", "http://b.com"]);
   });
 
-  it("filters empty values from comma-separated list", async () => {
-    process.env.CORS_ORIGINS = "http://localhost:3000,,http://localhost:3001";
-    const { config: freshConfig } = await import("./index");
-    expect(freshConfig.corsOrigins).toEqual([
-      "http://localhost:3000",
-      "http://localhost:3001",
-    ]);
+  it("returns true when all comma-separated elements are empty", () => {
+    expect(parseCorsOrigins(" , , ")).toBe(true);
   });
+});
 
-  it("has corsOrigins property", () => {
-    expect(config).toHaveProperty("corsOrigins");
+describe("config", () => {
+  it("has corsOrigins field", () => {
+    expect("corsOrigins" in config).toBe(true);
   });
 });

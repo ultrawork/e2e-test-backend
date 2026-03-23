@@ -1,11 +1,16 @@
-type CorsOrigins = true | string | string[];
+export type CorsOrigins = true | string | string[];
 
-function parseCorsOrigins(input?: string): CorsOrigins {
-  if (!input || input.trim() === "") return true;
-  const val = input.trim();
-  if (val === "*") return "*";
-  const list = val.split(",").map((s) => s.trim()).filter(Boolean);
-  return list.length <= 1 ? (list[0] ?? true) : list;
+export function parseCorsOrigins(input?: string): CorsOrigins {
+  if (input === undefined) return true;
+  const trimmed = input.trim();
+  if (trimmed === "") return true;
+  if (trimmed === "*") return "*";
+  if (trimmed.includes(",")) {
+    const parts = trimmed.split(",").map((s) => s.trim()).filter((s) => s !== "");
+    if (parts.length === 0) return true;
+    return parts;
+  }
+  return trimmed;
 }
 
 export const config = {
