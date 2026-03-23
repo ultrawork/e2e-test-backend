@@ -75,8 +75,10 @@ test("SC-003: CORS with single specific origin", async ({ request }) => {
  * (CORS_ORIGINS=http://first.com,http://second.com).
  */
 test("SC-004: CORS with multiple origins", async ({ request }) => {
+  const multiOriginApiUrl = process.env.CORS_MULTI_ORIGIN_API_URL || "http://localhost:4003";
+
   // First allowed origin
-  const first = await request.get(`${API_URL}/health`, {
+  const first = await request.get(`${multiOriginApiUrl}/health`, {
     headers: { Origin: "http://first.com" },
   });
   expect(first.status()).toBe(200);
@@ -85,7 +87,7 @@ test("SC-004: CORS with multiple origins", async ({ request }) => {
   );
 
   // Second allowed origin
-  const second = await request.get(`${API_URL}/health`, {
+  const second = await request.get(`${multiOriginApiUrl}/health`, {
     headers: { Origin: "http://second.com" },
   });
   expect(second.status()).toBe(200);
@@ -94,7 +96,7 @@ test("SC-004: CORS with multiple origins", async ({ request }) => {
   );
 
   // Disallowed origin
-  const third = await request.get(`${API_URL}/health`, {
+  const third = await request.get(`${multiOriginApiUrl}/health`, {
     headers: { Origin: "http://third.com" },
   });
   expect(third.status()).toBe(200);
