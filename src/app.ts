@@ -9,6 +9,7 @@ import { config } from "./config";
 const app = express();
 
 app.use(helmet());
+app.options("*", cors({ origin: config.corsOrigins }));
 app.use(cors({ origin: config.corsOrigins }));
 app.use(express.json());
 app.use(apiLimiter);
