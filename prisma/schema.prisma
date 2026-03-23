@@ -21,9 +21,10 @@ model User {
 }
 
 model Note {
-  id      String @id @default(uuid())
-  title   String
-  content String
+  id          String  @id @default(uuid())
+  title       String
+  content     String
+  isFavorited Boolean @default(false) @map("is_favorited")
 
   userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -110,3 +110,22 @@ export async function deleteNote(id: string, userId: string): Promise<void> {
   }
   await prisma.note.delete({ where: { id } });
 }
+
+/** Toggles the isFavorited flag of a note. Throws if not found or forbidden. */
+export async function toggleFavorite(
+  id: string,
+  userId: string
+): Promise<NoteWithCategories> {
+  const existing = await prisma.note.findUnique({ where: { id } });
+  if (!existing) {
+    throw new Error("Note not found");
+  }
+  if (existing.userId !== userId) {
+    throw new Error("Forbidden");
+  }
+  return prisma.note.update({
+    where: { id },
+    data: { isFavorited: !existing.isFavorited },
+    include: { categories: true },
+  });
+}
