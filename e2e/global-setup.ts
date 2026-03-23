@@ -1,26 +1,44 @@
 import { execSync } from "child_process";
+import {
+  CORS_WILDCARD_CONTAINER,
+  CORS_SINGLE_ORIGIN_CONTAINER,
+  CORS_MULTI_ORIGIN_CONTAINER,
+} from "./container-names";
 
-const CONTAINER_NAME = "cors-wildcard-e2e";
-const SINGLE_ORIGIN_CONTAINER = "cors-single-origin-e2e";
-const MULTI_ORIGIN_CONTAINER = "cors-multi-origin-e2e";
+async function waitForServer(
+  url: string,
+  containerName: string,
+  port: number
+): Promise<void> {
+  let ready = false;
+  for (let i = 0; i < 30; i++) {
+    try {
+      execSync(`curl -sf ${url}/health`, { stdio: "pipe" });
+      console.log(`CORS ${containerName} server ready on port ${port}`);
+      ready = true;
+      break;
+    } catch {
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+  }
+  if (!ready) {
+    console.warn(`CORS ${containerName} server: timeout waiting for port ${port}`);
+  }
+}
 
 async function globalSetup() {
   try {
-    // Clean up any leftover container from a previous run
-    try {
-      execSync(`docker rm -f ${CONTAINER_NAME}`, { stdio: "pipe" });
-    } catch {
-      // Container didn't exist, that's fine
-    }
-    try {
-      execSync(`docker rm -f ${SINGLE_ORIGIN_CONTAINER}`, { stdio: "pipe" });
-    } catch {
-      // Container didn't exist, that's fine
-    }
-    try {
-      execSync(`docker rm -f ${MULTI_ORIGIN_CONTAINER}`, { stdio: "pipe" });
-    } catch {
-      // Container didn't exist, that's fine
+    // Clean up any leftover containers from a previous run
+    for (const name of [
+      CORS_WILDCARD_CONTAINER,
+      CORS_SINGLE_ORIGIN_CONTAINER,
+      CORS_MULTI_ORIGIN_CONTAINER,
+    ]) {
+      try {
+        execSync(`docker rm -f ${name}`, { stdio: "pipe" });
+      } catch {
+        // Container didn't exist, that's fine
+      }
     }
 
     // Find the running backend container by e2e label
@@ -50,13 +68,12 @@ async function globalSetup() {
       .toString()
       .trim();
 
+    // Start wildcard server (CORS_ORIGINS=*)
     console.log(
       `Starting CORS wildcard server: image=${image}, network=${network}`
     );
-
-    // Start a second container with CORS_ORIGINS=*
     execSync(
-      `docker run -d --name ${CONTAINER_NAME} ` +
+      `docker run -d --name ${CORS_WILDCARD_CONTAINER} ` +
         `--network "${network}" ` +
         `-p 4001:3000 ` +
         `-e CORS_ORIGINS="*" ` +
@@ -67,24 +84,14 @@ async function globalSetup() {
         `"${image}"`,
       { stdio: "pipe" }
     );
+    await waitForServer("http://localhost:4001", "wildcard", 4001);
 
-    // Wait for the wildcard server to be ready (up to 30 seconds)
-    for (let i = 0; i < 30; i++) {
-      try {
-        execSync("curl -sf http://localhost:4001/health", { stdio: "pipe" });
-        console.log("CORS wildcard server ready on port 4001");
-        break;
-      } catch {
-        await new Promise((r) => setTimeout(r, 1000));
-      }
-    }
-
-    // Start a third container with CORS_ORIGINS=http://allowed.com for SC-003/SC-005
+    // Start single-origin server (CORS_ORIGINS=http://allowed.com) for SC-003/SC-005
     console.log(
       `Starting CORS single-origin server: image=${image}, network=${network}`
     );
     execSync(
-      `docker run -d --name ${SINGLE_ORIGIN_CONTAINER} ` +
+      `docker run -d --name ${CORS_SINGLE_ORIGIN_CONTAINER} ` +
         `--network "${network}" ` +
         `-p 4002:3000 ` +
         `-e CORS_ORIGINS="http://allowed.com" ` +
@@ -95,29 +102,14 @@ async function globalSetup() {
         `"${image}"`,
       { stdio: "pipe" }
     );
+    await waitForServer("http://localhost:4002", "single-origin", 4002);
 
-    // Wait for the single-origin server to be ready (up to 30 seconds)
-    let singleOriginReady = false;
-    for (let i = 0; i < 30; i++) {
-      try {
-        execSync("curl -sf http://localhost:4002/health", { stdio: "pipe" });
-        console.log("CORS single-origin server ready on port 4002");
-        singleOriginReady = true;
-        break;
-      } catch {
-        await new Promise((r) => setTimeout(r, 1000));
-      }
-    }
-    if (!singleOriginReady) {
-      console.warn("CORS single-origin server: timeout waiting for port 4002");
-    }
-
-    // Start a fourth container with CORS_ORIGINS=http://first.com,http://second.com for SC-004
+    // Start multi-origin server (CORS_ORIGINS=http://first.com,http://second.com) for SC-004
     console.log(
       `Starting CORS multi-origin server: image=${image}, network=${network}`
     );
     execSync(
-      `docker run -d --name ${MULTI_ORIGIN_CONTAINER} ` +
+      `docker run -d --name ${CORS_MULTI_ORIGIN_CONTAINER} ` +
         `--network "${network}" ` +
         `-p 4003:3000 ` +
         `-e CORS_ORIGINS="http://first.com,http://second.com" ` +
@@ -128,17 +120,7 @@ async function globalSetup() {
         `"${image}"`,
       { stdio: "pipe" }
     );
-
-    // Wait for the multi-origin server to be ready (up to 30 seconds)
-    for (let i = 0; i < 30; i++) {
-      try {
-        execSync("curl -sf http://localhost:4003/health", { stdio: "pipe" });
-        console.log("CORS multi-origin server ready on port 4003");
-        break;
-      } catch {
-        await new Promise((r) => setTimeout(r, 1000));
-      }
-    }
+    await waitForServer("http://localhost:4003", "multi-origin", 4003);
   } catch (e) {
     console.warn("CORS wildcard server setup failed:", e);
   }

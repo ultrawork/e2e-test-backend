@@ -108,7 +108,9 @@ test("SC-004: CORS with multiple origins", async ({ request }) => {
  * (CORS_ORIGINS=http://allowed.com).
  */
 test("SC-005: Preflight OPTIONS with specific origin", async ({ request }) => {
-  const preflight = await request.fetch(`${API_URL}/api/notes`, {
+  const singleOriginApiUrl =
+    process.env.CORS_SINGLE_ORIGIN_API_URL || "http://localhost:4002";
+  const preflight = await request.fetch(`${singleOriginApiUrl}/api/notes`, {
     method: "OPTIONS",
     headers: {
       Origin: "http://allowed.com",
