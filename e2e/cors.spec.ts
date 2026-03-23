@@ -38,7 +38,8 @@ test("SC-001: CORS allows all origins by default", async ({ request }) => {
  * Access-Control-Allow-Origin: *.
  */
 test("SC-002: CORS with wildcard origin", async ({ request }) => {
-  const res = await request.get(`${API_URL}/health`, {
+  const wildcardApiUrl = process.env.CORS_WILDCARD_API_URL || "http://localhost:4001";
+  const res = await request.get(`${wildcardApiUrl}/health`, {
     headers: { Origin: "http://any-domain.com" },
   });
   expect(res.status()).toBe(200);

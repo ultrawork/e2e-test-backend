@@ -8,4 +8,6 @@ export default defineConfig({
   use: {
     baseURL: process.env.BASE_URL || "http://localhost:4000",
   },
+  globalSetup: "./e2e/global-setup.ts",
+  globalTeardown: "./e2e/global-teardown.ts",
 });
