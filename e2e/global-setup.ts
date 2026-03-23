@@ -1,12 +1,18 @@
 import { execSync } from "child_process";
 
 const CONTAINER_NAME = "cors-wildcard-e2e";
+const SINGLE_ORIGIN_CONTAINER = "cors-single-origin-e2e";
 
 async function globalSetup() {
   try {
     // Clean up any leftover container from a previous run
     try {
       execSync(`docker rm -f ${CONTAINER_NAME}`, { stdio: "pipe" });
+    } catch {
+      // Container didn't exist, that's fine
+    }
+    try {
+      execSync(`docker rm -f ${SINGLE_ORIGIN_CONTAINER}`, { stdio: "pipe" });
     } catch {
       // Container didn't exist, that's fine
     }
@@ -56,17 +62,45 @@ async function globalSetup() {
       { stdio: "pipe" }
     );
 
-    // Wait for the server to be ready (up to 30 seconds)
+    // Wait for the wildcard server to be ready (up to 30 seconds)
     for (let i = 0; i < 30; i++) {
       try {
         execSync("curl -sf http://localhost:4001/health", { stdio: "pipe" });
         console.log("CORS wildcard server ready on port 4001");
+        break;
+      } catch {
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+    }
+
+    // Start a third container with CORS_ORIGINS=http://allowed.com for SC-003/SC-005
+    console.log(
+      `Starting CORS single-origin server: image=${image}, network=${network}`
+    );
+    execSync(
+      `docker run -d --name ${SINGLE_ORIGIN_CONTAINER} ` +
+        `--network "${network}" ` +
+        `-p 4002:3000 ` +
+        `-e CORS_ORIGINS="http://allowed.com" ` +
+        `-e PORT=3000 ` +
+        `-e DATABASE_URL="postgresql://postgres:postgres@db:5432/notes" ` +
+        `-e JWT_SECRET=test-secret ` +
+        `-e NODE_ENV=test ` +
+        `"${image}"`,
+      { stdio: "pipe" }
+    );
+
+    // Wait for the single-origin server to be ready (up to 30 seconds)
+    for (let i = 0; i < 30; i++) {
+      try {
+        execSync("curl -sf http://localhost:4002/health", { stdio: "pipe" });
+        console.log("CORS single-origin server ready on port 4002");
         return;
       } catch {
         await new Promise((r) => setTimeout(r, 1000));
       }
     }
-    console.warn("CORS wildcard server: timeout waiting for port 4001");
+    console.warn("CORS single-origin server: timeout waiting for port 4002");
   } catch (e) {
     console.warn("CORS wildcard server setup failed:", e);
   }

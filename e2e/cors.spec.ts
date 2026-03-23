@@ -52,8 +52,9 @@ test("SC-002: CORS with wildcard origin", async ({ request }) => {
  * Allowed origin gets reflected; disallowed origin does not.
  */
 test("SC-003: CORS with single specific origin", async ({ request }) => {
+  const singleOriginApiUrl = process.env.CORS_SINGLE_ORIGIN_API_URL || "http://localhost:4002";
   // Request from allowed origin
-  const allowed = await request.get(`${API_URL}/health`, {
+  const allowed = await request.get(`${singleOriginApiUrl}/health`, {
     headers: { Origin: "http://allowed.com" },
   });
   expect(allowed.status()).toBe(200);
@@ -61,7 +62,7 @@ test("SC-003: CORS with single specific origin", async ({ request }) => {
   expect(acaoAllowed).toBe("http://allowed.com");
 
   // Request from blocked origin — header must be absent
-  const blocked = await request.get(`${API_URL}/health`, {
+  const blocked = await request.get(`${singleOriginApiUrl}/health`, {
     headers: { Origin: "http://blocked.com" },
   });
   expect(blocked.status()).toBe(200);

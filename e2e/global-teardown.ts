@@ -7,6 +7,12 @@ async function globalTeardown() {
   } catch {
     // Container may not exist, that's fine
   }
+  try {
+    execSync("docker rm -f cors-single-origin-e2e", { stdio: "pipe" });
+    console.log("CORS single-origin server stopped");
+  } catch {
+    // Container may not exist, that's fine
+  }
 }
 
 export default globalTeardown;
