@@ -56,11 +56,20 @@ async function globalSetup() {
     }
 
     // Get image and network from the running container
-    const image = execSync(
+    // Use .Config.Image first; if empty (common with compose-built images), fall back to .Image (sha256 hash)
+    let image = execSync(
       `docker inspect --format '{{.Config.Image}}' ${containerId}`
     )
       .toString()
       .trim();
+
+    if (!image) {
+      image = execSync(
+        `docker inspect --format '{{.Image}}' ${containerId}`
+      )
+        .toString()
+        .trim();
+    }
 
     const network = execSync(
       `docker inspect --format '{{range $key, $val := .NetworkSettings.Networks}}{{println $key}}{{end}}' ${containerId} | head -1`
