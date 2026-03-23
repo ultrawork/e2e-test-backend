@@ -41,12 +41,24 @@ async function globalSetup() {
       }
     }
 
-    // Find the running backend container by e2e label
-    const containerId = execSync(
+    // Find the running backend container.
+    // Try e2e-request label first, then fall back to finding by published port.
+    let containerId = execSync(
       'docker ps --filter "label=e2e-request" -q | head -1'
     )
       .toString()
       .trim();
+
+    if (!containerId) {
+      // Derive port from API_URL / BASE_URL (default 4000)
+      const apiUrl = process.env.API_URL || process.env.BASE_URL || "http://localhost:4000";
+      const port = new URL(apiUrl).port || "4000";
+      containerId = execSync(
+        `docker ps --filter "publish=${port}" --format '{{.ID}}' | head -1`
+      )
+        .toString()
+        .trim();
+    }
 
     if (!containerId) {
       console.warn(
