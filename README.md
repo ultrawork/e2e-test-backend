@@ -126,3 +126,15 @@ docker compose exec backend npx prisma migrate deploy
 ## Environment Variables
 
 See [.env.example](.env.example) for the full list of required environment variables.
+
+## CORS
+
+The server uses a configurable origin whitelist. Set the `CORS_ORIGINS` environment variable as a comma-separated list of allowed browser origins:
+
+```
+CORS_ORIGINS=http://localhost:3001,http://localhost:5173,http://127.0.0.1:5173
+```
+
+**Defaults (when `CORS_ORIGINS` is not set):** `http://localhost:3001`, `http://localhost:5173`, `http://127.0.0.1:5173`
+
+Requests **without an `Origin` header** (SSR, mobile clients, server-to-server) are always allowed regardless of the whitelist.
