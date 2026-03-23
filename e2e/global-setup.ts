@@ -97,16 +97,20 @@ async function globalSetup() {
     );
 
     // Wait for the single-origin server to be ready (up to 30 seconds)
+    let singleOriginReady = false;
     for (let i = 0; i < 30; i++) {
       try {
         execSync("curl -sf http://localhost:4002/health", { stdio: "pipe" });
         console.log("CORS single-origin server ready on port 4002");
+        singleOriginReady = true;
         break;
       } catch {
         await new Promise((r) => setTimeout(r, 1000));
       }
     }
-    console.warn("CORS single-origin server: timeout waiting for port 4002");
+    if (!singleOriginReady) {
+      console.warn("CORS single-origin server: timeout waiting for port 4002");
+    }
 
     // Start a fourth container with CORS_ORIGINS=http://first.com,http://second.com for SC-004
     console.log(
