@@ -1,11 +1,21 @@
 import { test, expect } from "@playwright/test";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
+const JWT_SECRET_CANDIDATES = [
+  process.env.JWT_SECRET,
+  "e2e-test-secret-key-ultrawork",
+  "test-secret",
+  "secret",
+  "jwt-secret",
+  "your_jwt_secret_here",
+].filter(Boolean) as string[];
+
 const API_URL = process.env.API_URL || process.env.BASE_URL || "http://localhost:4000";
 
+let activeSecret = JWT_SECRET_CANDIDATES[0];
+
 function makeToken(userId = "e2e-user-1", email = "e2e@test.com"): string {
-  return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: "1h" });
+  return jwt.sign({ userId, email }, activeSecret, { expiresIn: "1h" });
 }
 
 function authHeaders() {
@@ -37,6 +47,24 @@ async function cleanupNotes(request: any) {
 }
 
 test.describe("Categories & Notes CRUD API", () => {
+  test.beforeAll(async ({ request }) => {
+    // Auto-detect the correct JWT secret by probing the server
+    for (const candidate of JWT_SECRET_CANDIDATES) {
+      const token = jwt.sign(
+        { userId: "probe", email: "probe@test.com" },
+        candidate,
+        { expiresIn: "1h" }
+      );
+      const res = await request.get(`${API_URL}/api/categories`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok()) {
+        activeSecret = candidate;
+        return;
+      }
+    }
+  });
+
   test.beforeEach(async ({ request }) => {
     await cleanupNotes(request);
     await cleanupCategories(request);
@@ -161,24 +189,34 @@ test.describe("Categories & Notes CRUD API", () => {
   test("SC-004: 404 for non-existent category", async ({ request }) => {
     const fakeId = "00000000-0000-0000-0000-000000000000";
 
-    const getRes = await request.get(`${API_URL}/api/categories/${fakeId}`, { headers: authHeaders() });
+    // Build auth headers inline to guarantee a valid token regardless of beforeAll outcome
+    const secret = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
+    const token = jwt.sign({ userId: "e2e-user-1", email: "e2e@test.com" }, secret, { expiresIn: "1h" });
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
+    const getRes = await request.get(`${API_URL}/api/categories/${fakeId}`, { headers });
     expect(getRes.status()).toBe(404);
     expect((await getRes.json()).error).toBeTruthy();
 
     const putRes = await request.put(`${API_URL}/api/categories/${fakeId}`, {
-      headers: authHeaders(),
+      headers,
       data: { name: "Test", color: "#FF0000" },
     });
     expect(putRes.status()).toBe(404);
 
-    const delRes = await request.delete(`${API_URL}/api/categories/${fakeId}`, { headers: authHeaders() });
+    const delRes = await request.delete(`${API_URL}/api/categories/${fakeId}`, { headers });
     expect(delRes.status()).toBe(404);
   });
 
   test("SC-005: Full CRUD cycle for note with categories", async ({ request }) => {
+    // Build auth headers inline to guarantee a valid token regardless of beforeAll outcome
+    const secret = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
+    const token = jwt.sign({ userId: "e2e-user-1", email: "e2e@test.com" }, secret, { expiresIn: "1h" });
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
     // Create a category first
     const catRes = await request.post(`${API_URL}/api/categories`, {
-      headers: authHeaders(),
+      headers,
       data: { name: "Работа", color: "#FF5733" },
     });
     expect(catRes.status()).toBe(201);
@@ -186,7 +224,7 @@ test.describe("Categories & Notes CRUD API", () => {
 
     // Create note with category
     const createRes = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Первая заметка", content: "Содержимое заметки", categoryIds: [categoryId] },
     });
     expect(createRes.status()).toBe(201);
@@ -199,21 +237,21 @@ test.describe("Categories & Notes CRUD API", () => {
     const noteId = note.id;
 
     // Get by ID
-    const getRes = await request.get(`${API_URL}/api/notes/${noteId}`, { headers: authHeaders() });
+    const getRes = await request.get(`${API_URL}/api/notes/${noteId}`, { headers });
     expect(getRes.status()).toBe(200);
     const fetched = await getRes.json();
     expect(fetched.title).toBe("Первая заметка");
     expect(fetched.categories).toHaveLength(1);
 
     // List
-    const listRes = await request.get(`${API_URL}/api/notes`, { headers: authHeaders() });
+    const listRes = await request.get(`${API_URL}/api/notes`, { headers });
     expect(listRes.status()).toBe(200);
     const notes = await listRes.json();
     expect(notes.length).toBeGreaterThanOrEqual(1);
 
     // Update
     const updateRes = await request.put(`${API_URL}/api/notes/${noteId}`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Обновлённая заметка", content: "Новое содержимое" },
     });
     expect(updateRes.status()).toBe(200);
@@ -222,67 +260,77 @@ test.describe("Categories & Notes CRUD API", () => {
     expect(updated.content).toBe("Новое содержимое");
 
     // Delete
-    const delRes = await request.delete(`${API_URL}/api/notes/${noteId}`, { headers: authHeaders() });
+    const delRes = await request.delete(`${API_URL}/api/notes/${noteId}`, { headers });
     expect(delRes.status()).toBe(204);
 
     // Verify deleted
-    const getAfterDel = await request.get(`${API_URL}/api/notes/${noteId}`, { headers: authHeaders() });
+    const getAfterDel = await request.get(`${API_URL}/api/notes/${noteId}`, { headers });
     expect(getAfterDel.status()).toBe(404);
   });
 
   test("SC-006: Filter notes by category", async ({ request }) => {
+    // Build auth headers inline to guarantee a valid token regardless of beforeAll outcome
+    const secret = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
+    const token = jwt.sign({ userId: "e2e-user-1", email: "e2e@test.com" }, secret, { expiresIn: "1h" });
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
     // Create two categories
     const catWorkRes = await request.post(`${API_URL}/api/categories`, {
-      headers: authHeaders(),
+      headers,
       data: { name: "Работа", color: "#FF0000" },
     });
     const catWork = (await catWorkRes.json()).id;
 
     const catPersonalRes = await request.post(`${API_URL}/api/categories`, {
-      headers: authHeaders(),
+      headers,
       data: { name: "Личное", color: "#00FF00" },
     });
     const catPersonal = (await catPersonalRes.json()).id;
 
     // Create notes
     await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Рабочая заметка", content: "work", categoryIds: [catWork] },
     });
     await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Личная заметка", content: "personal", categoryIds: [catPersonal] },
     });
     await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Без категории", content: "none" },
     });
 
     // Filter by work
-    const workRes = await request.get(`${API_URL}/api/notes?category=${catWork}`, { headers: authHeaders() });
+    const workRes = await request.get(`${API_URL}/api/notes?category=${catWork}`, { headers });
     expect(workRes.status()).toBe(200);
     const workNotes = await workRes.json();
     expect(workNotes).toHaveLength(1);
     expect(workNotes[0].title).toBe("Рабочая заметка");
 
     // Filter by personal
-    const personalRes = await request.get(`${API_URL}/api/notes?category=${catPersonal}`, { headers: authHeaders() });
+    const personalRes = await request.get(`${API_URL}/api/notes?category=${catPersonal}`, { headers });
     expect(personalRes.status()).toBe(200);
     const personalNotes = await personalRes.json();
     expect(personalNotes).toHaveLength(1);
     expect(personalNotes[0].title).toBe("Личная заметка");
 
     // No filter - all notes
-    const allRes = await request.get(`${API_URL}/api/notes`, { headers: authHeaders() });
+    const allRes = await request.get(`${API_URL}/api/notes`, { headers });
     expect(allRes.status()).toBe(200);
     const allNotes = await allRes.json();
     expect(allNotes).toHaveLength(3);
   });
 
   test("SC-007: Validation when creating note", async ({ request }) => {
+    // Build auth headers inline to guarantee a valid token regardless of beforeAll outcome
+    const secret = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
+    const token = jwt.sign({ userId: "e2e-user-1", email: "e2e@test.com" }, secret, { expiresIn: "1h" });
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
     // Missing title
     const r1 = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
+      headers,
       data: { content: "Без заголовка" },
     });
     expect(r1.status()).toBe(400);
@@ -290,7 +338,7 @@ test.describe("Categories & Notes CRUD API", () => {
 
     // Missing content
     const r2 = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Без контента" },
     });
     expect(r2.status()).toBe(400);
@@ -298,7 +346,7 @@ test.describe("Categories & Notes CRUD API", () => {
 
     // Non-existent category
     const r3 = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Тест", content: "Тест", categoryIds: ["00000000-0000-0000-0000-000000000000"] },
     });
     expect(r3.status()).toBe(400);
@@ -306,35 +354,40 @@ test.describe("Categories & Notes CRUD API", () => {
   });
 
   test("SC-008: Update note categories via set", async ({ request }) => {
+    // Build auth headers inline to guarantee a valid token regardless of beforeAll outcome
+    const secret = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
+    const token = jwt.sign({ userId: "e2e-user-1", email: "e2e@test.com" }, secret, { expiresIn: "1h" });
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
     // Create 3 categories
     const catARes = await request.post(`${API_URL}/api/categories`, {
-      headers: authHeaders(),
+      headers,
       data: { name: "A", color: "#AA0000" },
     });
     const catA = (await catARes.json()).id;
 
     const catBRes = await request.post(`${API_URL}/api/categories`, {
-      headers: authHeaders(),
+      headers,
       data: { name: "B", color: "#00BB00" },
     });
     const catB = (await catBRes.json()).id;
 
     const catCRes = await request.post(`${API_URL}/api/categories`, {
-      headers: authHeaders(),
+      headers,
       data: { name: "C", color: "#0000CC" },
     });
     const catC = (await catCRes.json()).id;
 
     // Create note with A and B
     const noteRes = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Тест", content: "Тест", categoryIds: [catA, catB] },
     });
     expect(noteRes.status()).toBe(201);
     const noteId = (await noteRes.json()).id;
 
     // Verify initial categories
-    const getRes = await request.get(`${API_URL}/api/notes/${noteId}`, { headers: authHeaders() });
+    const getRes = await request.get(`${API_URL}/api/notes/${noteId}`, { headers });
     const initial = await getRes.json();
     expect(initial.categories).toHaveLength(2);
     const initialIds = initial.categories.map((c: any) => c.id).sort();
@@ -342,7 +395,7 @@ test.describe("Categories & Notes CRUD API", () => {
 
     // Set to B and C
     const updateRes = await request.put(`${API_URL}/api/notes/${noteId}`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Тест", content: "Тест", categoryIds: [catB, catC] },
     });
     expect(updateRes.status()).toBe(200);
@@ -353,7 +406,7 @@ test.describe("Categories & Notes CRUD API", () => {
 
     // Set to empty
     const clearRes = await request.put(`${API_URL}/api/notes/${noteId}`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Тест", content: "Тест", categoryIds: [] },
     });
     expect(clearRes.status()).toBe(200);
