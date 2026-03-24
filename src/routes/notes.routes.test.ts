@@ -9,6 +9,12 @@ jest.mock("../middleware/auth", () => ({
   },
 }));
 
+jest.mock("../middleware/ensureUser", () => ({
+  ensureUser: (_req: Request, _res: Response, next: NextFunction) => {
+    next();
+  },
+}));
+
 jest.mock("../services/notes.service", () => ({
   listNotes: jest.fn(),
   getNoteById: jest.fn(),
