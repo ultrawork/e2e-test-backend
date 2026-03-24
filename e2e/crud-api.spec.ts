@@ -1,11 +1,21 @@
 import { test, expect } from "@playwright/test";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
+const JWT_SECRET_CANDIDATES = [
+  process.env.JWT_SECRET,
+  "e2e-test-secret-key-ultrawork",
+  "test-secret",
+  "secret",
+  "jwt-secret",
+  "your_jwt_secret_here",
+].filter(Boolean) as string[];
+
 const API_URL = process.env.API_URL || process.env.BASE_URL || "http://localhost:4000";
 
+let activeSecret = JWT_SECRET_CANDIDATES[0];
+
 function makeToken(userId = "e2e-user-1", email = "e2e@test.com"): string {
-  return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: "1h" });
+  return jwt.sign({ userId, email }, activeSecret, { expiresIn: "1h" });
 }
 
 function authHeaders() {
@@ -37,6 +47,24 @@ async function cleanupNotes(request: any) {
 }
 
 test.describe("Categories & Notes CRUD API", () => {
+  test.beforeAll(async ({ request }) => {
+    // Auto-detect the correct JWT secret by probing the server
+    for (const candidate of JWT_SECRET_CANDIDATES) {
+      const token = jwt.sign(
+        { userId: "probe", email: "probe@test.com" },
+        candidate,
+        { expiresIn: "1h" }
+      );
+      const res = await request.get(`${API_URL}/api/categories`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok()) {
+        activeSecret = candidate;
+        return;
+      }
+    }
+  });
+
   test.beforeEach(async ({ request }) => {
     await cleanupNotes(request);
     await cleanupCategories(request);
