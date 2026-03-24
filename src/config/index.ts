@@ -16,7 +16,7 @@ export function parseCorsOrigins(
 export const config = {
   port: parseInt(process.env.PORT || "3000", 10),
   databaseUrl: process.env.DATABASE_URL || "",
-  jwtSecret: process.env.JWT_SECRET || "",
+  jwtSecret: process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork",
   nodeEnv: process.env.NODE_ENV || "development",
   corsOrigins: parseCorsOrigins(process.env.CORS_ORIGINS),
 } as const;
