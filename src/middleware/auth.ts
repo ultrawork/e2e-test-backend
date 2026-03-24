@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { config } from "../config";
+import { prisma } from "../lib/prisma";
 
-export function authMiddleware(
+export async function authMiddleware(
   req: Request,
   res: Response,
   next: NextFunction
-): void {
+): Promise<void> {
   if (!config.jwtEnabled) {
     if (!req.user) {
       req.user = { userId: "default-user-id", email: "dev@localhost" };
@@ -26,6 +27,15 @@ export function authMiddleware(
       userId: string;
       email: string;
     };
+    await prisma.user.upsert({
+      where: { id: payload.userId },
+      update: {},
+      create: {
+        id: payload.userId,
+        email: payload.email,
+        password: "jwt-auth-placeholder",
+      },
+    });
     req.user = { userId: payload.userId, email: payload.email };
     next();
   } catch {

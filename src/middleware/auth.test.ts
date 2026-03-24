@@ -8,6 +8,14 @@ jest.mock("../config", () => ({
   config: { jwtEnabled: true, jwtSecret: TEST_SECRET },
 }));
 
+jest.mock("../lib/prisma", () => ({
+  prisma: {
+    user: {
+      upsert: jest.fn().mockResolvedValue({}),
+    },
+  },
+}));
+
 import { authMiddleware } from "./auth";
 
 const app = express();
