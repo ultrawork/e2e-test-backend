@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { authMiddleware } from "../middleware/auth";
+import { ensureUser } from "../middleware/ensureUser";
 import {
   listNotes,
   getNoteById,
@@ -11,6 +12,7 @@ import {
 const notesRouter = Router();
 
 notesRouter.use(authMiddleware);
+notesRouter.use(ensureUser);
 
 function handleNoteError(err: unknown, res: Response): void {
   if (err instanceof Error) {
