@@ -354,35 +354,40 @@ test.describe("Categories & Notes CRUD API", () => {
   });
 
   test("SC-008: Update note categories via set", async ({ request }) => {
+    // Build auth headers inline to guarantee a valid token regardless of beforeAll outcome
+    const secret = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
+    const token = jwt.sign({ userId: "e2e-user-1", email: "e2e@test.com" }, secret, { expiresIn: "1h" });
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
     // Create 3 categories
     const catARes = await request.post(`${API_URL}/api/categories`, {
-      headers: authHeaders(),
+      headers,
       data: { name: "A", color: "#AA0000" },
     });
     const catA = (await catARes.json()).id;
 
     const catBRes = await request.post(`${API_URL}/api/categories`, {
-      headers: authHeaders(),
+      headers,
       data: { name: "B", color: "#00BB00" },
     });
     const catB = (await catBRes.json()).id;
 
     const catCRes = await request.post(`${API_URL}/api/categories`, {
-      headers: authHeaders(),
+      headers,
       data: { name: "C", color: "#0000CC" },
     });
     const catC = (await catCRes.json()).id;
 
     // Create note with A and B
     const noteRes = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Тест", content: "Тест", categoryIds: [catA, catB] },
     });
     expect(noteRes.status()).toBe(201);
     const noteId = (await noteRes.json()).id;
 
     // Verify initial categories
-    const getRes = await request.get(`${API_URL}/api/notes/${noteId}`, { headers: authHeaders() });
+    const getRes = await request.get(`${API_URL}/api/notes/${noteId}`, { headers });
     const initial = await getRes.json();
     expect(initial.categories).toHaveLength(2);
     const initialIds = initial.categories.map((c: any) => c.id).sort();
@@ -390,7 +395,7 @@ test.describe("Categories & Notes CRUD API", () => {
 
     // Set to B and C
     const updateRes = await request.put(`${API_URL}/api/notes/${noteId}`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Тест", content: "Тест", categoryIds: [catB, catC] },
     });
     expect(updateRes.status()).toBe(200);
@@ -401,7 +406,7 @@ test.describe("Categories & Notes CRUD API", () => {
 
     // Set to empty
     const clearRes = await request.put(`${API_URL}/api/notes/${noteId}`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Тест", content: "Тест", categoryIds: [] },
     });
     expect(clearRes.status()).toBe(200);
