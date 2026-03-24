@@ -5,9 +5,11 @@ services:
       - "${PORT:-3000}:3000"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/notes
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:-e2e-test-secret-key-ultrawork}
+      JWT_ENABLED: "true"
       PORT: "3000"
       NODE_ENV: ${NODE_ENV:-development}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3001,http://localhost:3000,http://localhost:4000}
     depends_on:
       db:
         condition: service_healthy
