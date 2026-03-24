@@ -269,49 +269,54 @@ test.describe("Categories & Notes CRUD API", () => {
   });
 
   test("SC-006: Filter notes by category", async ({ request }) => {
+    // Build auth headers inline to guarantee a valid token regardless of beforeAll outcome
+    const secret = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
+    const token = jwt.sign({ userId: "e2e-user-1", email: "e2e@test.com" }, secret, { expiresIn: "1h" });
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
     // Create two categories
     const catWorkRes = await request.post(`${API_URL}/api/categories`, {
-      headers: authHeaders(),
+      headers,
       data: { name: "Работа", color: "#FF0000" },
     });
     const catWork = (await catWorkRes.json()).id;
 
     const catPersonalRes = await request.post(`${API_URL}/api/categories`, {
-      headers: authHeaders(),
+      headers,
       data: { name: "Личное", color: "#00FF00" },
     });
     const catPersonal = (await catPersonalRes.json()).id;
 
     // Create notes
     await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Рабочая заметка", content: "work", categoryIds: [catWork] },
     });
     await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Личная заметка", content: "personal", categoryIds: [catPersonal] },
     });
     await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Без категории", content: "none" },
     });
 
     // Filter by work
-    const workRes = await request.get(`${API_URL}/api/notes?category=${catWork}`, { headers: authHeaders() });
+    const workRes = await request.get(`${API_URL}/api/notes?category=${catWork}`, { headers });
     expect(workRes.status()).toBe(200);
     const workNotes = await workRes.json();
     expect(workNotes).toHaveLength(1);
     expect(workNotes[0].title).toBe("Рабочая заметка");
 
     // Filter by personal
-    const personalRes = await request.get(`${API_URL}/api/notes?category=${catPersonal}`, { headers: authHeaders() });
+    const personalRes = await request.get(`${API_URL}/api/notes?category=${catPersonal}`, { headers });
     expect(personalRes.status()).toBe(200);
     const personalNotes = await personalRes.json();
     expect(personalNotes).toHaveLength(1);
     expect(personalNotes[0].title).toBe("Личная заметка");
 
     // No filter - all notes
-    const allRes = await request.get(`${API_URL}/api/notes`, { headers: authHeaders() });
+    const allRes = await request.get(`${API_URL}/api/notes`, { headers });
     expect(allRes.status()).toBe(200);
     const allNotes = await allRes.json();
     expect(allNotes).toHaveLength(3);
