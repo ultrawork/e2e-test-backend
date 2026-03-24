@@ -12,8 +12,7 @@ if (config.nodeEnv !== "production") {
       userId: "dev-user-id",
       email: "dev@localhost",
     };
-    const secret = config.jwtSecret || "dev-secret-fallback";
-    const token = jwt.sign(payload, secret, { expiresIn: "24h" });
+    const token = jwt.sign(payload, config.jwtSecret, { expiresIn: "24h" });
     res.json({ token });
   });
 }

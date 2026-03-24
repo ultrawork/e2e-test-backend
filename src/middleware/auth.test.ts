@@ -47,6 +47,15 @@ describe("authMiddleware", () => {
   });
 
   describe("when JWT_ENABLED=true", () => {
+    it("returns 500 when jwtSecret is empty", async () => {
+      mutableConfig.jwtSecret = "";
+
+      const res = await request(createApp()).get("/protected");
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ error: "JWT secret is not configured" });
+    });
+
     it("returns 401 when no Authorization header", async () => {
       const res = await request(createApp()).get("/protected");
 
