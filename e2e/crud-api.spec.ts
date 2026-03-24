@@ -323,9 +323,14 @@ test.describe("Categories & Notes CRUD API", () => {
   });
 
   test("SC-007: Validation when creating note", async ({ request }) => {
+    // Build auth headers inline to guarantee a valid token regardless of beforeAll outcome
+    const secret = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
+    const token = jwt.sign({ userId: "e2e-user-1", email: "e2e@test.com" }, secret, { expiresIn: "1h" });
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
     // Missing title
     const r1 = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
+      headers,
       data: { content: "Без заголовка" },
     });
     expect(r1.status()).toBe(400);
@@ -333,7 +338,7 @@ test.describe("Categories & Notes CRUD API", () => {
 
     // Missing content
     const r2 = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Без контента" },
     });
     expect(r2.status()).toBe(400);
@@ -341,7 +346,7 @@ test.describe("Categories & Notes CRUD API", () => {
 
     // Non-existent category
     const r3 = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
+      headers,
       data: { title: "Тест", content: "Тест", categoryIds: ["00000000-0000-0000-0000-000000000000"] },
     });
     expect(r3.status()).toBe(400);
