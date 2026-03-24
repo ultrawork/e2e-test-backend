@@ -6,6 +6,7 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/notes
       JWT_SECRET: ${JWT_SECRET}
+      JWT_ENABLED: ${JWT_ENABLED:-true}
       PORT: "3000"
       NODE_ENV: ${NODE_ENV:-development}
     depends_on:
