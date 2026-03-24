@@ -189,17 +189,22 @@ test.describe("Categories & Notes CRUD API", () => {
   test("SC-004: 404 for non-existent category", async ({ request }) => {
     const fakeId = "00000000-0000-0000-0000-000000000000";
 
-    const getRes = await request.get(`${API_URL}/api/categories/${fakeId}`, { headers: authHeaders() });
+    // Build auth headers inline to guarantee a valid token regardless of beforeAll outcome
+    const secret = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
+    const token = jwt.sign({ userId: "e2e-user-1", email: "e2e@test.com" }, secret, { expiresIn: "1h" });
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+
+    const getRes = await request.get(`${API_URL}/api/categories/${fakeId}`, { headers });
     expect(getRes.status()).toBe(404);
     expect((await getRes.json()).error).toBeTruthy();
 
     const putRes = await request.put(`${API_URL}/api/categories/${fakeId}`, {
-      headers: authHeaders(),
+      headers,
       data: { name: "Test", color: "#FF0000" },
     });
     expect(putRes.status()).toBe(404);
 
-    const delRes = await request.delete(`${API_URL}/api/categories/${fakeId}`, { headers: authHeaders() });
+    const delRes = await request.delete(`${API_URL}/api/categories/${fakeId}`, { headers });
     expect(delRes.status()).toBe(404);
   });
 
