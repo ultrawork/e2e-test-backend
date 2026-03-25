@@ -17,7 +17,7 @@ authRouter.post("/dev-token", (_req: Request, res: Response) => {
   }
 
   const token = jwt.sign(
-    { userId: "dev-user-id", email: "dev@localhost" },
+    { userId: config.devUserId, email: "dev@localhost" },
     config.jwtSecret,
     { expiresIn: "24h" }
   );
