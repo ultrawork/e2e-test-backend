@@ -16,7 +16,9 @@ app.use(
   })
 );
 app.use(express.json());
-app.use(apiLimiter);
+if (config.nodeEnv !== "test") {
+  app.use(apiLimiter);
+}
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
