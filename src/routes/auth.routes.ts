@@ -6,7 +6,7 @@ const authRouter = Router();
 
 /** POST /api/auth/dev-token — issues a JWT for development/testing. */
 authRouter.post("/dev-token", (_req: Request, res: Response) => {
-  if (config.nodeEnv !== "development") {
+  if (config.nodeEnv === "production") {
     res.status(404).json({ error: "Not found" });
     return;
   }

@@ -65,6 +65,7 @@ The API will be available at `http://localhost:3000`.
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/health` | Health check |
+| `GET` | `/api/health` | API-level health check |
 | `POST` | `/api/auth/register` | Register new user |
 | `POST` | `/api/auth/login` | Login |
 | `POST` | `/api/auth/logout` | Logout |
@@ -121,6 +122,18 @@ docker compose exec backend npx prisma migrate deploy
 ├── Dockerfile                # Multi-stage production build
 ├── package.json
 └── tsconfig.json
+```
+
+## CORS Configuration
+
+Set `CORS_ORIGINS` as a comma-separated list of allowed origins:
+
+```env
+# Web + React Native + Expo
+CORS_ORIGINS=http://localhost:3000,http://localhost:8081,http://localhost:19006
+
+# Wildcard (development only)
+CORS_ORIGINS=*
 ```
 
 ## Environment Variables
