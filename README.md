@@ -60,11 +60,44 @@ The API will be available at `http://localhost:3000`.
 | `npm test` | Run tests |
 | `npx prisma studio` | Open Prisma database GUI |
 
+## Authentication
+
+In development mode (`NODE_ENV=development`), you can obtain a short-lived JWT via the dev-token endpoint:
+
+```bash
+# Get a dev JWT token
+curl -s -X POST http://localhost:3000/api/auth/dev-token | jq .
+
+# Use the token to access protected endpoints
+TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/dev-token | jq -r .token)
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/notes | jq .
+```
+
+### CORS Configuration
+
+The `CORS_ORIGINS` environment variable controls which origins are allowed to make cross-origin requests. Format: comma-separated list of origins, or `*` to allow all.
+
+```bash
+# Allow specific origins
+CORS_ORIGINS=http://localhost:3001,https://app.example.com
+
+# Allow all origins
+CORS_ORIGINS=*
+```
+
+Verify CORS headers:
+
+```bash
+curl -s -I -H "Origin: http://localhost:3001" http://localhost:3000/api/health
+# Look for: Access-Control-Allow-Origin: http://localhost:3001
+```
+
 ## API Endpoints
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/health` | Health check |
+| `GET` | `/health` | Health check (legacy) |
+| `GET` | `/api/health` | Health check with timestamp |
 | `POST` | `/api/auth/register` | Register new user |
 | `POST` | `/api/auth/login` | Login |
 | `POST` | `/api/auth/logout` | Logout |

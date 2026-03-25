@@ -13,4 +13,5 @@ export const config = {
   nodeEnv: process.env.NODE_ENV || "development",
   jwtEnabled: process.env.JWT_ENABLED === "true",
   corsOrigins: parseCorsOrigins(process.env.CORS_ORIGINS || ""),
+  devUserId: process.env.DEV_USER_ID || "dev-user-id",
 } as const;
