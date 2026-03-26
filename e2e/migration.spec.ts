@@ -4,23 +4,26 @@ import { Client } from "pg";
 const DATABASE_URL =
   process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/notes";
 
-let dbClient: Client;
-
-test.beforeAll(async () => {
-  dbClient = new Client({ connectionString: DATABASE_URL });
-  await dbClient.connect();
-});
-
-test.afterAll(async () => {
-  await dbClient.end();
-});
-
+/** SC-001 does not need a DB connection — keep it outside the describe block */
 test.describe("Database Migration - Category M:N", () => {
   test("SC-001: Health endpoint works after migration", async ({ request }) => {
     const response = await request.get("/health");
     expect(response.status()).toBe(200);
     const body = await response.json();
     expect(body).toEqual({ status: "ok" });
+  });
+});
+
+test.describe("Database Migration - Category M:N Schema", () => {
+  let dbClient: Client;
+
+  test.beforeAll(async () => {
+    dbClient = new Client({ connectionString: DATABASE_URL });
+    await dbClient.connect();
+  });
+
+  test.afterAll(async () => {
+    await dbClient.end();
   });
 
   test("SC-002: Migration creates categories table with correct structure", async () => {
