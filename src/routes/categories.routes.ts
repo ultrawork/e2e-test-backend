@@ -1,5 +1,4 @@
 import { Router, Request, Response } from "express";
-import { authMiddleware } from "../middleware/auth";
 import {
   listCategories,
   getCategoryById,
@@ -10,8 +9,6 @@ import {
 } from "../services/categories.service";
 
 const categoriesRouter = Router();
-
-categoriesRouter.use(authMiddleware);
 
 categoriesRouter.get("/", async (_req: Request, res: Response) => {
   try {

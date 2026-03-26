@@ -20,10 +20,6 @@ if (config.nodeEnv !== "test") {
   app.use(apiLimiter);
 }
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
-
 app.use("/api", router);
 
 app.use(errorHandler);
