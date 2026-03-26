@@ -8,7 +8,11 @@ let dbClient: Client;
 
 test.beforeAll(async () => {
   dbClient = new Client({ connectionString: DATABASE_URL });
-  await dbClient.connect();
+  try {
+    await dbClient.connect();
+  } catch {
+    // DB may not be reachable; tests that need dbClient will fail individually
+  }
 });
 
 test.afterAll(async () => {
@@ -17,7 +21,7 @@ test.afterAll(async () => {
 
 test.describe("Database Migration - Category M:N", () => {
   test("SC-001: Health endpoint works after migration", async ({ request }) => {
-    const response = await request.get("/health");
+    const response = await request.get("/api/health");
     expect(response.status()).toBe(200);
     const body = await response.json();
     expect(body).toEqual({ status: "ok" });
