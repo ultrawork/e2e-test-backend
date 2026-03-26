@@ -48,6 +48,26 @@ test("SC-3: dev-token grants access to protected endpoint", async ({
   expect(Array.isArray(notes)).toBe(true);
 });
 
+/** SC-4: CORS preflight возвращает корректные заголовки для Android origin */
+test("SC-4: OPTIONS preflight returns correct CORS headers for Android origin (http://localhost:8081)", async ({
+  request,
+}) => {
+  const response = await request.fetch(`${API_URL}/api/notes`, {
+    method: "OPTIONS",
+    headers: {
+      Origin: "http://localhost:8081",
+      "Access-Control-Request-Method": "GET",
+    },
+  });
+
+  // Preflight should return 204 or 200
+  expect([200, 204]).toContain(response.status());
+
+  const headers = response.headers();
+  expect(headers["access-control-allow-origin"]).toBe("http://localhost:8081");
+  expect(headers["access-control-allow-credentials"]).toBe("true");
+});
+
 /** SC-5: CORS preflight возвращает корректные заголовки для разрешённого origin */
 test("SC-5: OPTIONS preflight returns correct CORS headers for allowed origin", async ({
   request,
@@ -66,6 +86,28 @@ test("SC-5: OPTIONS preflight returns correct CORS headers for allowed origin", 
   const headers = response.headers();
   expect(headers["access-control-allow-origin"]).toBe(
     "http://localhost:3000"
+  );
+  expect(headers["access-control-allow-credentials"]).toBe("true");
+});
+
+/** SC-6: CORS preflight возвращает корректные заголовки для Expo/React Native origin */
+test("SC-6: OPTIONS preflight returns correct CORS headers for Expo/RN origin (http://localhost:19006)", async ({
+  request,
+}) => {
+  const response = await request.fetch(`${API_URL}/api/notes`, {
+    method: "OPTIONS",
+    headers: {
+      Origin: "http://localhost:19006",
+      "Access-Control-Request-Method": "GET",
+    },
+  });
+
+  // Preflight should return 204 or 200
+  expect([200, 204]).toContain(response.status());
+
+  const headers = response.headers();
+  expect(headers["access-control-allow-origin"]).toBe(
+    "http://localhost:19006"
   );
   expect(headers["access-control-allow-credentials"]).toBe("true");
 });
