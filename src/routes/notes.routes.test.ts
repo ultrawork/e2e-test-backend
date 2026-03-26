@@ -2,13 +2,6 @@ import request from "supertest";
 import express, { Request, Response, NextFunction } from "express";
 import { notesRouter } from "./notes.routes";
 
-jest.mock("../middleware/auth", () => ({
-  authMiddleware: (req: Request, _res: Response, next: NextFunction) => {
-    req.user = { userId: "user-1", email: "test@test.com" };
-    next();
-  },
-}));
-
 jest.mock("../middleware/ensureUser", () => ({
   ensureUser: (_req: Request, _res: Response, next: NextFunction) => {
     next();
@@ -39,6 +32,10 @@ const mockDelete = deleteNote as jest.Mock;
 
 const app = express();
 app.use(express.json());
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  req.user = { userId: "user-1", email: "test@test.com" };
+  next();
+});
 app.use("/notes", notesRouter);
 
 beforeEach(() => jest.clearAllMocks());
