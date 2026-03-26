@@ -101,18 +101,33 @@ Tests:       63 passed, 63 total
 
 ---
 
-## 5. Changes Made (this branch)
+## 5. Docker Prisma Migration Fix
+
+### Problem
+The Dockerfile CMD was `node dist/index.js` without running `npx prisma migrate deploy` first. This means the `_CategoryToNote` join table (from migration `20250321000000_add_category_mn`) does not exist in the PostgreSQL database on fresh container startup, causing `prisma.note.create({ include: { categories: true } })` to throw a 500 error when `POST /api/notes` is called.
+
+### Fix
+Updated `Dockerfile` CMD to run Prisma migrations before starting the app:
+```dockerfile
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
+```
+This ensures all pending migrations are applied to the database before the application starts accepting requests.
+
+---
+
+## 6. Changes Made (this branch)
 
 1. **`src/routes/index.ts`** — Added centralized `authMiddleware` between public (`/health`, `/auth`) and protected (`/notes`, `/categories`) routes.
 2. **`src/routes/notes.routes.ts`** — Removed duplicate `authMiddleware` import and usage; kept `ensureUser`.
 3. **`src/routes/categories.routes.ts`** — Removed duplicate `authMiddleware` import and usage.
 4. **`src/app.ts`** — Removed redundant app-level `/health` endpoint (only `/api/health` remains).
 5. **`src/verification.test.ts`** — Added verification tests covering CORS preflight, JWT auth flow, and route protection.
-6. **`docs/verification-report.md`** — This report.
+6. **`Dockerfile`** — Added `npx prisma migrate deploy` to container startup CMD to ensure database schema is up-to-date.
+7. **`docs/verification-report.md`** — This report.
 
 ---
 
-## 6. Conclusion
+## 7. Conclusion
 
 All verification criteria are met:
 - CORS middleware active, allowed origins pass preflight
@@ -122,3 +137,4 @@ All verification criteria are met:
 - `GET /api/notes` without token → 401
 - `GET /api/notes` and `POST /api/notes` with token → 200/201
 - All new routes added after `router.use(authMiddleware)` are protected by default
+- Prisma migrations run automatically on Docker container startup
