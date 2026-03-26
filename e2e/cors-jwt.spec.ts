@@ -61,7 +61,7 @@ test("SC-004: GET /api/notes with invalid token returns 401", async ({ request }
 
 /** SC-005: CORS headers for allowed origin */
 test("SC-005: CORS headers present for allowed origin", async ({ request }) => {
-  const response = await request.get(`${API_URL}/health`, {
+  const response = await request.get(`${API_URL}/api/health`, {
     headers: {
       Origin: "http://localhost:3001",
     },
