@@ -50,7 +50,8 @@ test.describe("Centralized Auth Middleware — CORS/JWT/ENV", () => {
   test("SC-4: GET /api/notes with valid token returns 200", async ({
     request,
   }) => {
-    const token = createToken();
+    const tokenRes = await request.post(`${API_URL}/api/auth/dev-token`);
+    const { token } = await tokenRes.json();
     const res = await request.get(`${API_URL}/api/notes`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -63,7 +64,8 @@ test.describe("Centralized Auth Middleware — CORS/JWT/ENV", () => {
   test("SC-5: POST /api/notes with valid token returns 201", async ({
     request,
   }) => {
-    const token = createToken();
+    const tokenRes = await request.post(`${API_URL}/api/auth/dev-token`);
+    const { token } = await tokenRes.json();
     const res = await request.post(`${API_URL}/api/notes`, {
       headers: { Authorization: `Bearer ${token}` },
       data: { title: "E2E Auth Test Note", content: "Content for centralized auth verification" },
