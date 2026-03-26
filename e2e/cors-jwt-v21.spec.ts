@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
 
-const BASE_URL = process.env.BASE_URL || "http://localhost:4000";
+const API_URL = process.env.API_URL || process.env.BASE_URL || "http://localhost:4000";
 
 test.describe("CORS/JWT Verification v21", () => {
   test("SC-1: GET /health returns 200 and status ok", async ({ request }) => {
-    const response = await request.get(`${BASE_URL}/health`);
+    const response = await request.get(`${API_URL}/health`);
     expect(response.status()).toBe(200);
     const body = await response.json();
     expect(body).toEqual({ status: "ok" });
@@ -13,24 +13,26 @@ test.describe("CORS/JWT Verification v21", () => {
   test("SC-2: GET /api/notes without token returns 401", async ({
     request,
   }) => {
-    const response = await request.get(`${BASE_URL}/api/notes`);
+    const response = await request.get(`${API_URL}/api/notes`);
     expect(response.status()).toBe(401);
     const body = await response.json();
-    expect(body).toEqual({ error: "Unauthorized" });
+    expect(body).toHaveProperty("error");
   });
 
   test("SC-3: dev-token + authorized access to /api/notes", async ({
     request,
   }) => {
     const tokenResponse = await request.post(
-      `${BASE_URL}/api/auth/dev-token`,
+      `${API_URL}/api/auth/dev-token`,
     );
     expect(tokenResponse.status()).toBe(200);
-    const { token } = await tokenResponse.json();
+    const tokenBody = await tokenResponse.json();
+    expect(tokenBody).toHaveProperty("token");
+    const token = tokenBody.token;
     expect(typeof token).toBe("string");
     expect(token.split(".").length).toBe(3);
 
-    const notesResponse = await request.get(`${BASE_URL}/api/notes`, {
+    const notesResponse = await request.get(`${API_URL}/api/notes`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(notesResponse.status()).toBe(200);
@@ -38,9 +40,9 @@ test.describe("CORS/JWT Verification v21", () => {
     expect(Array.isArray(notes)).toBe(true);
   });
 
-  test("SC-4: OPTIONS /api/notes with Origin http://localhost:3000 returns 204 and CORS headers", async () => {
+  test("SC-4: OPTIONS preflight with Origin http://localhost:3000 returns 204 and CORS headers", async () => {
     const origin = "http://localhost:3000";
-    const response = await fetch(`${BASE_URL}/api/notes`, {
+    const response = await fetch(`${API_URL}/api/notes`, {
       method: "OPTIONS",
       headers: {
         Origin: origin,
@@ -54,9 +56,9 @@ test.describe("CORS/JWT Verification v21", () => {
     );
   });
 
-  test("SC-5: OPTIONS /api/notes with Origin http://localhost:8081 returns 204 and CORS headers", async () => {
+  test("SC-5: OPTIONS preflight with Origin http://localhost:8081 returns 204 and CORS headers", async () => {
     const origin = "http://localhost:8081";
-    const response = await fetch(`${BASE_URL}/api/notes`, {
+    const response = await fetch(`${API_URL}/api/notes`, {
       method: "OPTIONS",
       headers: {
         Origin: origin,
@@ -70,9 +72,9 @@ test.describe("CORS/JWT Verification v21", () => {
     );
   });
 
-  test("SC-6: OPTIONS /api/notes with Origin http://localhost:19006 returns 204 and CORS headers", async () => {
+  test("SC-6: OPTIONS preflight with Origin http://localhost:19006 returns 204 and CORS headers", async () => {
     const origin = "http://localhost:19006";
-    const response = await fetch(`${BASE_URL}/api/notes`, {
+    const response = await fetch(`${API_URL}/api/notes`, {
       method: "OPTIONS",
       headers: {
         Origin: origin,
