@@ -69,7 +69,7 @@ This issues a token for the default dev user without requiring credentials.
 
 ## iOS UITest / XCUITest
 
-The iOS app reads the JWT from `UserDefaults` under the key `token`.
+Pass the token to the iOS test suite via launch arguments or environment variables:
 
 Set the token before running tests (example using `xcrun simctl`):
 ```bash

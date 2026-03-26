@@ -14,7 +14,6 @@ const prisma = new PrismaClient();
 
 const TEST_USER_EMAIL = "test@example.com";
 const TEST_USER_PASSWORD = "P@ssw0rd";
-const TEST_USER_ID = "test-user-seed-id";
 
 async function main(): Promise<void> {
   console.log("🌱 Starting seed...");
@@ -28,7 +27,6 @@ async function main(): Promise<void> {
   const hashedPassword = await bcrypt.hash(TEST_USER_PASSWORD, 10);
   const user = await prisma.user.create({
     data: {
-      id: TEST_USER_ID,
       email: TEST_USER_EMAIL,
       password: hashedPassword,
     },

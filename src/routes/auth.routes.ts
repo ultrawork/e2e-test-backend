@@ -61,7 +61,8 @@ authRouter.post("/login", async (req: Request, res: Response) => {
     );
 
     res.json({ token });
-  } catch {
+  } catch (err) {
+    console.error("[auth/login] Unexpected error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
