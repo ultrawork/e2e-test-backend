@@ -1,11 +1,18 @@
-/** Parses CORS_ORIGINS env variable into a list of origins or wildcard. */
-function parseCorsOrigins(raw: string): string[] | "*" {
-  if (raw.trim() === "*") {
-    return "*";
+const DEFAULT_ORIGINS = [
+  "http://localhost:3001",
+  "http://localhost:3000",
+  "http://localhost:8081",
+  "http://localhost:19006",
+];
+
+/** Parses CORS_ORIGINS env variable into a concrete list of allowed origins. */
+function parseCorsOrigins(raw: string): string[] {
+  if (!raw.trim() || raw.trim() === "*") {
+    return DEFAULT_ORIGINS;
   }
   const origins = raw.split(",").map((origin) => origin.trim()).filter(Boolean);
   if (origins.length === 0) {
-    return ["http://localhost:3001", "http://localhost:3000", "http://localhost:8081", "http://localhost:19006"];
+    return DEFAULT_ORIGINS;
   }
   return origins;
 }
