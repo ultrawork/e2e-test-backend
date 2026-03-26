@@ -1,9 +1,13 @@
 /** Parses CORS_ORIGINS env variable into a list of origins or wildcard. */
 function parseCorsOrigins(raw: string): string[] | "*" {
-  if (!raw || raw.trim() === "*") {
+  if (raw.trim() === "*") {
     return "*";
   }
-  return raw.split(",").map((origin) => origin.trim()).filter(Boolean);
+  const origins = raw.split(",").map((origin) => origin.trim()).filter(Boolean);
+  if (origins.length === 0) {
+    return ["http://localhost:3001", "http://localhost:3000", "http://localhost:8081", "http://localhost:19006"];
+  }
+  return origins;
 }
 
 export const config = {
