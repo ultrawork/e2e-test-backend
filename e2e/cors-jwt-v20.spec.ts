@@ -82,3 +82,18 @@ test("V20-6: CORS preflight for Expo origin (19006)", async ({ request }) => {
   expect(h["access-control-allow-origin"]).toBe("http://localhost:19006");
   expect(h["access-control-allow-credentials"]).toBe("true");
 });
+
+/** V20-7: CORS preflight for disallowed origin does NOT return allow-origin */
+test("V20-7: CORS preflight rejects disallowed origin", async ({ request }) => {
+  const response = await request.fetch(`${API_URL}/api/notes`, {
+    method: "OPTIONS",
+    headers: {
+      Origin: "http://evil.example.com",
+      "Access-Control-Request-Method": "GET",
+    },
+  });
+  const h = response.headers();
+  // The server should NOT echo back the disallowed origin
+  const allowOrigin = h["access-control-allow-origin"] || "";
+  expect(allowOrigin).not.toBe("http://evil.example.com");
+});
