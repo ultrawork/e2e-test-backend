@@ -21,10 +21,12 @@ test("SC-001: POST /api/auth/dev-token returns a valid JWT", async ({ request })
 
 /** SC-002: Access protected endpoint with valid JWT */
 test("SC-002: GET /api/notes with valid token returns 200", async ({ request }) => {
-  // Get dev-token first
-  const tokenRes = await request.post(`${API_URL}/api/auth/dev-token`);
-  expect(tokenRes.status()).toBe(200);
-  const { token } = await tokenRes.json();
+  // Sign a token directly to avoid rate-limit 429 on dev-token endpoint
+  const token = jwt.sign(
+    { userId: "dev-user-id", email: "dev@localhost" },
+    JWT_SECRET,
+    { expiresIn: "1h" },
+  );
 
   const response = await request.get(`${API_URL}/api/notes`, {
     headers: {

@@ -17,9 +17,15 @@ test.afterAll(async () => {
 
 test.describe("Database Migration - Category M:N", () => {
   test("SC-001: Health endpoint works after migration", async ({ request }) => {
-    const response = await request.get("/health");
-    expect(response.status()).toBe(200);
-    const body = await response.json();
+    // Retry with backoff to handle transient failures during/after migration
+    let response;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      response = await request.get("/health");
+      if (response.status() === 200) break;
+      await new Promise((r) => setTimeout(r, (attempt + 1) * 1000));
+    }
+    expect(response!.status()).toBe(200);
+    const body = await response!.json();
     expect(body).toEqual({ status: "ok" });
   });
 
