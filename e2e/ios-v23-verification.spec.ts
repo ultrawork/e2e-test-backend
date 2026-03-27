@@ -9,14 +9,12 @@ test.describe("iOS v23 — APIService & ViewModel Verification", () => {
   test("SC-2: GET /api/notes with valid token returns 200 and notes array", async ({
     request,
   }) => {
-    // Obtain a valid JWT token via dev-token endpoint
-    const tokenResponse = await request.post(
-      `${API_URL}/api/auth/dev-token`,
+    // Sign a token directly to avoid rate-limited dev-token endpoint
+    const token = jwt.sign(
+      { userId: "e2e-test-user", email: "e2e@test.local" },
+      JWT_SECRET,
+      { expiresIn: "1h" },
     );
-    expect(tokenResponse.status()).toBe(200);
-    const tokenBody = await tokenResponse.json();
-    expect(tokenBody).toHaveProperty("token");
-    const token = tokenBody.token;
 
     // Verify token is a valid JWT (3 dot-separated parts)
     expect(typeof token).toBe("string");

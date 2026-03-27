@@ -6,10 +6,16 @@ const API_URL = process.env.API_URL || process.env.BASE_URL || "http://localhost
 
 /** SC-001: Get dev-token in development mode */
 test("SC-001: POST /api/auth/dev-token returns a valid JWT", async ({ request }) => {
-  const response = await request.post(`${API_URL}/api/auth/dev-token`);
-  expect(response.status()).toBe(200);
+  // Retry with backoff to handle 429 rate-limit responses
+  let response;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    response = await request.post(`${API_URL}/api/auth/dev-token`);
+    if (response.status() !== 429) break;
+    await new Promise((r) => setTimeout(r, (attempt + 1) * 2000));
+  }
+  expect(response!.status()).toBe(200);
 
-  const body = await response.json();
+  const body = await response!.json();
   expect(body).toHaveProperty("token");
   expect(typeof body.token).toBe("string");
   expect(body.token.length).toBeGreaterThan(0);
@@ -21,10 +27,12 @@ test("SC-001: POST /api/auth/dev-token returns a valid JWT", async ({ request })
 
 /** SC-002: Access protected endpoint with valid JWT */
 test("SC-002: GET /api/notes with valid token returns 200", async ({ request }) => {
-  // Get dev-token first
-  const tokenRes = await request.post(`${API_URL}/api/auth/dev-token`);
-  expect(tokenRes.status()).toBe(200);
-  const { token } = await tokenRes.json();
+  // Sign a token directly to avoid rate-limited dev-token endpoint
+  const token = jwt.sign(
+    { userId: "e2e-test-user", email: "e2e@test.local" },
+    JWT_SECRET,
+    { expiresIn: "1h" },
+  );
 
   const response = await request.get(`${API_URL}/api/notes`, {
     headers: {
