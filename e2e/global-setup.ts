@@ -26,6 +26,17 @@ async function globalSetup() {
         ALTER TABLE "notes" DROP COLUMN IF EXISTS "category";
       `);
 
+      // Ensure categories table exists
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS "categories" (
+          "id" TEXT NOT NULL,
+          "name" TEXT NOT NULL,
+          "color" TEXT NOT NULL,
+          "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
+        );
+      `);
+
       // Ensure _CategoryToNote join table exists with CASCADE constraints
       await client.query(`
         CREATE TABLE IF NOT EXISTS "_CategoryToNote" (
