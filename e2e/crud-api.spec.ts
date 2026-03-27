@@ -280,27 +280,35 @@ test.describe("Categories & Notes CRUD API", () => {
   });
 
   test("SC-007: Validation when creating note", async ({ request }) => {
+    // Retry helper to handle transient 429 rate-limit responses
+    async function postExpecting400(data: object) {
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const res = await request.post(`${API_URL}/api/notes`, {
+          headers: authHeaders(),
+          data,
+        });
+        if (res.status() !== 429) return res;
+        await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+      }
+      // Final attempt — return whatever status we get
+      return request.post(`${API_URL}/api/notes`, {
+        headers: authHeaders(),
+        data,
+      });
+    }
+
     // Missing title
-    const r1 = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
-      data: { content: "Без заголовка" },
-    });
+    const r1 = await postExpecting400({ content: "Без заголовка" });
     expect(r1.status()).toBe(400);
     expect((await r1.json()).error).toBeTruthy();
 
     // Missing content
-    const r2 = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
-      data: { title: "Без контента" },
-    });
+    const r2 = await postExpecting400({ title: "Без контента" });
     expect(r2.status()).toBe(400);
     expect((await r2.json()).error).toBeTruthy();
 
     // Non-existent category
-    const r3 = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
-      data: { title: "Тест", content: "Тест", categoryIds: ["00000000-0000-0000-0000-000000000000"] },
-    });
+    const r3 = await postExpecting400({ title: "Тест", content: "Тест", categoryIds: ["00000000-0000-0000-0000-000000000000"] });
     expect(r3.status()).toBe(400);
     expect((await r3.json()).error).toBeTruthy();
   });
