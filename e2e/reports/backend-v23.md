@@ -147,25 +147,25 @@ JWT middleware correctly enforces authentication when `JWT_ENABLED=true`:
 
 ---
 
-## Issues Found (out of scope — to be addressed in separate PRs)
+## Issues Found and Fixed
 
-### 1. CORS wildcard fallback when CORS_ORIGINS is empty
+### 1. CORS wildcard fallback when CORS_ORIGINS is empty — FIXED
 
-**Observation:** `parseCorsOrigins()` in `src/config/index.ts` returns `"*"` when
-`CORS_ORIGINS` env var is empty or unset, because empty string and `"*"` share the same branch:
+**Observation:** `parseCorsOrigins()` in `src/config/index.ts` returned `"*"` when
+`CORS_ORIGINS` env var was empty or unset, because empty string and `"*"` shared the same branch:
 ```typescript
 if (!raw || raw.trim() === "*") { return "*"; }
 ```
-This means an unconfigured server allows all origins (including `http://evil.com`).
+This meant an unconfigured server allowed all origins (including `http://evil.com`).
 
-**Recommended fix (separate PR):** Split the condition so that empty/unset `CORS_ORIGINS` returns
-`[]` (block all origins) while explicit `"*"` still returns `"*"` (allow all).
+**Fix applied:** Split the condition so that empty/unset `CORS_ORIGINS` returns
+`[]` (block all origins) while explicit `"*"` still returns `"*"` (allow all):
+```typescript
+if (!raw || raw.trim() === "") { return []; }
+if (raw.trim() === "*") { return "*"; }
+```
 
-### 2. CORS origin callback could be replaced with static configuration
+### 2. CORS origin callback replaced with static configuration — PREVIOUSLY FIXED
 
-**Observation:** The current `cors({ origin: (origin, callback) => { ... } })` pattern relies on
-the `cors` package interpreting `callback(null, false)` as "do not set CORS headers". While this
-works with the current cors version, a static `origin` array is the documented approach and avoids
-reliance on callback behavior.
-
-**Recommended fix (separate PR):** Replace the dynamic callback with a static `origin` array.
+The CORS configuration now uses a static `origin` array (commit 697733e), which is the
+documented approach and avoids reliance on callback behavior.
