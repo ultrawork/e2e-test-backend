@@ -29,16 +29,11 @@ test("SC-2: GET /api/notes without Authorization returns 401", async ({
 test("SC-3: dev-token grants access to protected endpoint", async ({
   request,
 }) => {
-  // Step 1: obtain dev-token (retry with backoff to handle 429 rate-limit)
-  let tokenRes;
-  for (let attempt = 0; attempt < 5; attempt++) {
-    tokenRes = await request.post(`${API_URL}/api/auth/dev-token`);
-    if (tokenRes.status() !== 429) break;
-    await new Promise((r) => setTimeout(r, (attempt + 1) * 2000));
-  }
-  expect(tokenRes!.status()).toBe(200);
+  // Step 1: obtain dev-token
+  const tokenRes = await request.post(`${API_URL}/api/auth/dev-token`);
+  expect(tokenRes.status()).toBe(200);
 
-  const tokenBody = await tokenRes!.json();
+  const tokenBody = await tokenRes.json();
   expect(tokenBody).toHaveProperty("token");
   expect(typeof tokenBody.token).toBe("string");
   expect(tokenBody.token.length).toBeGreaterThan(0);
