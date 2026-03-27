@@ -45,8 +45,7 @@ test("SC-003: GET /api/notes without token returns 401", async ({ request }) => 
   expect(response.status()).toBe(401);
 
   const body = await response.json();
-  expect(body).toHaveProperty("error");
-  expect(body.error).toBe("Unauthorized");
+  expect(body).toEqual({ error: "Unauthorized" });
 });
 
 /** SC-004: Request to protected endpoint with invalid token */
