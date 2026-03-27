@@ -147,45 +147,25 @@ JWT middleware correctly enforces authentication when `JWT_ENABLED=true`:
 
 ---
 
-## Issues Found & Fixed
+## Issues Found (out of scope — to be addressed in separate PRs)
 
-### 1. CORS wildcard fallback when CORS_ORIGINS is empty (FIXED)
+### 1. CORS wildcard fallback when CORS_ORIGINS is empty
 
-**Observation:** `parseCorsOrigins()` in `src/config/index.ts` previously returned `"*"` when
-`CORS_ORIGINS` env var was empty or unset, because empty string and `"*"` shared the same branch:
+**Observation:** `parseCorsOrigins()` in `src/config/index.ts` returns `"*"` when
+`CORS_ORIGINS` env var is empty or unset, because empty string and `"*"` share the same branch:
 ```typescript
 if (!raw || raw.trim() === "*") { return "*"; }
 ```
-This meant an unconfigured server would allow all origins (including `http://evil.com`).
+This means an unconfigured server allows all origins (including `http://evil.com`).
 
-**Fix applied:** Split the condition so that empty/unset `CORS_ORIGINS` returns `[]` (block all
-origins) while explicit `"*"` still returns `"*"` (allow all). This ensures that a misconfigured
-server denies CORS requests by default rather than allowing them.
+**Recommended fix (separate PR):** Split the condition so that empty/unset `CORS_ORIGINS` returns
+`[]` (block all origins) while explicit `"*"` still returns `"*"` (allow all).
 
-```typescript
-if (!raw || raw.trim() === "") { return []; }
-if (raw.trim() === "*") { return "*"; }
-```
+### 2. CORS origin callback could be replaced with static configuration
 
-### 2. CORS origin callback replaced with static configuration (FIXED)
+**Observation:** The current `cors({ origin: (origin, callback) => { ... } })` pattern relies on
+the `cors` package interpreting `callback(null, false)` as "do not set CORS headers". While this
+works with the current cors version, a static `origin` array is the documented approach and avoids
+reliance on callback behavior.
 
-**Observation:** The previous `cors({ origin: (origin, callback) => { ... callback(null, false) } })`
-pattern relied on the `cors` package interpreting `callback(null, false)` as "do not set CORS headers".
-While this works with the current cors version, the behavior is an implementation detail that may
-change across versions (the verifier flagged cors@2.8.6 echoing disallowed origins in some configurations).
-
-**Fix applied:** Replaced the dynamic callback with a static `origin` array:
-```typescript
-cors({
-  origin: config.corsOrigins === "*" ? true : config.corsOrigins,
-  credentials: true,
-})
-```
-The `cors` package natively handles array-based origin matching via `isOriginAllowed()` and sets
-`Access-Control-Allow-Origin` header value to `false` (which `applyHeaders()` skips) for non-matching
-origins. This removes reliance on callback behavior and is the documented approach.
-
-**Unit test added:** `src/app.test.ts` verifies that allowed origins receive CORS headers while
-disallowed origins (e.g., `http://evil.com`) do not.
-
-An automated E2E test (`SC-CORS-BLOCK` in `e2e/cors-jwt-v23.spec.ts`) also validates this behavior.
+**Recommended fix (separate PR):** Replace the dynamic callback with a static `origin` array.

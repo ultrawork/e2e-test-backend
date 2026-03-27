@@ -81,9 +81,9 @@ test.describe("CORS & JWT Verification v23", () => {
         "Access-Control-Request-Headers": "Authorization",
       },
     });
-    // The server should not reflect the disallowed origin
+    // The server should not set any CORS origin header for disallowed origins
     const allowOrigin = response.headers.get("access-control-allow-origin");
-    expect(allowOrigin).not.toBe("http://evil.com");
+    expect(allowOrigin).toBeNull();
   });
 
   test("SC-008b: POST /api/auth/dev-token returns 200 in test", async ({

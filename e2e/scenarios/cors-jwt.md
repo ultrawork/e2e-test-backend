@@ -2,6 +2,7 @@
 
 ## Prerequisites
 
+- Node.js >= 18 (required for global `fetch()` used in CORS preflight tests)
 - Server running locally (`docker compose up -d` or `npm run dev`)
 - `NODE_ENV=development` or `NODE_ENV=test`
 - `.env` configured from `.env.example` with:

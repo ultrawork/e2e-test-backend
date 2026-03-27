@@ -8,19 +8,11 @@ let dbClient: Client;
 
 test.beforeAll(async () => {
   dbClient = new Client({ connectionString: DATABASE_URL });
-  try {
-    await dbClient.connect();
-  } catch {
-    // DB may not be available; health-check test does not need it
-  }
+  await dbClient.connect();
 });
 
 test.afterAll(async () => {
-  try {
-    await dbClient.end();
-  } catch {
-    // Ignore if DB was never connected
-  }
+  await dbClient.end();
 });
 
 test.describe("Database Migration - Category M:N", () => {
