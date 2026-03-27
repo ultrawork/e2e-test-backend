@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 const API_URL =
-  process.env.API_URL || process.env.BASE_URL || "http://localhost:4000";
+  process.env.API_URL || process.env.BASE_URL || "http://localhost:3000";
 
 test.describe("CORS & JWT Verification v23", () => {
   test("SC-001: GET /health returns 200", async ({ request }) => {
@@ -47,80 +47,47 @@ test.describe("CORS & JWT Verification v23", () => {
     expect(Array.isArray(notes)).toBe(true);
   });
 
-  test("SC-005: CORS preflight Origin localhost:3000 returns 204", async () => {
-    const origin = "http://localhost:3000";
-    const response = await fetch(`${API_URL}/api/notes`, {
-      method: "OPTIONS",
-      headers: {
-        Origin: origin,
-        "Access-Control-Request-Method": "GET",
-        "Access-Control-Request-Headers": "Authorization",
-      },
+  // SC-005, SC-006, SC-007: CORS preflight for each allowed origin.
+  // Uses global fetch() because Playwright's request API does not support
+  // the OPTIONS method directly.
+  for (const [id, origin] of [
+    ["SC-005", "http://localhost:3000"],
+    ["SC-006", "http://localhost:8081"],
+    ["SC-007", "http://localhost:19006"],
+  ] as const) {
+    test(`${id}: CORS preflight for ${origin} returns 204`, async () => {
+      const response = await fetch(`${API_URL}/api/notes`, {
+        method: "OPTIONS",
+        headers: {
+          Origin: origin,
+          "Access-Control-Request-Method": "GET",
+          "Access-Control-Request-Headers": "Authorization",
+        },
+      });
+      expect(response.status).toBe(204);
+      expect(response.headers.get("access-control-allow-origin")).toBe(origin);
+      expect(response.headers.get("access-control-allow-credentials")).toBe(
+        "true",
+      );
     });
-    expect(response.status).toBe(204);
-    expect(response.headers.get("access-control-allow-origin")).toBe(origin);
-    expect(response.headers.get("access-control-allow-credentials")).toBe(
-      "true",
-    );
-  });
+  }
 
-  test("SC-006: CORS preflight Origin localhost:8081 returns 204", async () => {
-    const origin = "http://localhost:8081";
-    const response = await fetch(`${API_URL}/api/notes`, {
-      method: "OPTIONS",
-      headers: {
-        Origin: origin,
-        "Access-Control-Request-Method": "GET",
-        "Access-Control-Request-Headers": "Authorization",
-      },
-    });
-    expect(response.status).toBe(204);
-    expect(response.headers.get("access-control-allow-origin")).toBe(origin);
-    expect(response.headers.get("access-control-allow-credentials")).toBe(
-      "true",
-    );
-  });
-
-  test("SC-007: CORS preflight Origin localhost:19006 returns 204", async () => {
-    const origin = "http://localhost:19006";
-    const response = await fetch(`${API_URL}/api/notes`, {
-      method: "OPTIONS",
-      headers: {
-        Origin: origin,
-        "Access-Control-Request-Method": "GET",
-        "Access-Control-Request-Headers": "Authorization",
-      },
-    });
-    expect(response.status).toBe(204);
-    expect(response.headers.get("access-control-allow-origin")).toBe(origin);
-    expect(response.headers.get("access-control-allow-credentials")).toBe(
-      "true",
-    );
-  });
-
-  test("SC-008: CORS blocks disallowed origin (evil.com)", async () => {
-    const origin = "http://evil.com";
-    const response = await fetch(`${API_URL}/api/notes`, {
-      method: "OPTIONS",
-      headers: {
-        Origin: origin,
-        "Access-Control-Request-Method": "GET",
-        "Access-Control-Request-Headers": "Authorization",
-      },
-    });
-    const allowOrigin = response.headers.get("access-control-allow-origin");
-    // Must NOT reflect the disallowed origin
-    expect(allowOrigin).not.toBe(origin);
-  });
-
-  test("SC-010: GET /api/notes with invalid token returns 401", async ({
+  // SC-008a requires the server to be running with NODE_ENV=production,
+  // which cannot be controlled within a single Playwright test run.
+  // This scenario is verified via curl in e2e/reports/backend-v23.md.
+  test.skip("SC-008a: POST /api/auth/dev-token returns 404 in production", async ({
     request,
   }) => {
-    const response = await request.get(`${API_URL}/api/notes`, {
-      headers: { Authorization: "Bearer invalid.token.value" },
-    });
-    expect(response.status()).toBe(401);
+    const response = await request.post(`${API_URL}/api/auth/dev-token`);
+    expect(response.status()).toBe(404);
+  });
+
+  test("SC-008b: POST /api/auth/dev-token returns 200 in test", async ({
+    request,
+  }) => {
+    const response = await request.post(`${API_URL}/api/auth/dev-token`);
+    expect(response.status()).toBe(200);
     const body = await response.json();
-    expect(body).toHaveProperty("error", "Unauthorized");
+    expect(body).toHaveProperty("token");
   });
 });

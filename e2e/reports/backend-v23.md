@@ -147,25 +147,15 @@ JWT middleware correctly enforces authentication when `JWT_ENABLED=true`:
 
 ---
 
-## Issues Found & Fixed
+## Issues Found
 
-### CORS wildcard fallback when CORS_ORIGINS is empty (FIXED)
+### CORS wildcard fallback when CORS_ORIGINS is empty
 
-**Problem:** `parseCorsOrigins()` in `src/config/index.ts` returned `"*"` when `CORS_ORIGINS`
-env var was empty or unset. This caused `origin: true` in the `cors()` middleware, which
-reflected ALL request origins unconditionally — including disallowed ones like `http://evil.com`.
-
-**Root cause:** Line 3 of `src/config/index.ts` treated empty string the same as wildcard:
+**Observation:** `parseCorsOrigins()` in `src/config/index.ts` returns `"*"` when `CORS_ORIGINS`
+env var is empty or unset, because empty string and `"*"` share the same branch:
 ```typescript
 if (!raw || raw.trim() === "*") { return "*"; }
 ```
-
-**Fix:** Separated the two cases — empty input now returns `[]` (block all origins),
-while `"*"` still returns `"*"`:
-```typescript
-if (raw.trim() === "*") { return "*"; }
-if (!raw || !raw.trim()) { return []; }
-```
-
-**Verification:** Unit tests added in `src/config/index.test.ts` (6 tests, all passing).
-After fix, requests from non-allowed origins are correctly blocked by the CORS middleware.
+This means an unconfigured server would allow all origins. With `CORS_ORIGINS` properly set
+(as verified in this report), the behavior is correct. The fix for the empty-string case
+is tracked separately and is out of scope for this verification PR.
