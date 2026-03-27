@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { Client } from "pg";
 
+const API_URL = process.env.API_URL || process.env.BASE_URL || "http://localhost:4000";
 const DATABASE_URL =
   process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/notes";
 
@@ -26,7 +27,7 @@ test.afterAll(async () => {
 
 test.describe("Database Migration - Category M:N", () => {
   test("SC-001: Health endpoint works after migration", async ({ request }) => {
-    const response = await request.get("/health");
+    const response = await request.get(`${API_URL}/health`);
     expect(response.status()).toBe(200);
     const body = await response.json();
     expect(body).toEqual({ status: "ok" });
