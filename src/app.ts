@@ -9,12 +9,25 @@ import { router } from "./routes";
 const app = express();
 
 app.use(helmet());
-app.use(
-  cors({
-    origin: config.corsOrigins === "*" ? true : config.corsOrigins,
-    credentials: true,
-  })
-);
+app.use((req, res, next) => {
+  const requestOrigin = req.headers.origin;
+  const allowed = config.corsOrigins;
+
+  if (allowed === "*") {
+    return cors({ origin: true, credentials: true })(req, res, next);
+  }
+
+  if (requestOrigin && Array.isArray(allowed) && allowed.includes(requestOrigin)) {
+    return cors({ origin: requestOrigin, credentials: true })(req, res, next);
+  }
+
+  // Disallowed or missing origin: no CORS headers, handle OPTIONS manually
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+  next();
+});
 app.use(express.json());
 if (config.nodeEnv !== "test") {
   app.use(apiLimiter);
