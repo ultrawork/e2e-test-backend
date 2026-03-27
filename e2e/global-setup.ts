@@ -21,6 +21,11 @@ async function globalSetup() {
     try {
       await client.connect();
 
+      // Drop legacy category enum column from notes table if it exists
+      await client.query(`
+        ALTER TABLE "notes" DROP COLUMN IF EXISTS "category";
+      `);
+
       // Ensure _CategoryToNote join table exists with CASCADE constraints
       await client.query(`
         CREATE TABLE IF NOT EXISTS "_CategoryToNote" (
