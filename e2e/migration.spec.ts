@@ -9,13 +9,27 @@ let dbClient: Client;
 
 let dbConnected = false;
 
+async function connectWithRetry(url: string, retries = 5, delayMs = 2000): Promise<Client | null> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const client = new Client({ connectionString: url });
+    try {
+      await client.connect();
+      return client;
+    } catch (err) {
+      try { await client.end(); } catch { /* ignore */ }
+      if (attempt < retries) {
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
+    }
+  }
+  return null;
+}
+
 test.beforeAll(async () => {
-  dbClient = new Client({ connectionString: DATABASE_URL });
-  try {
-    await dbClient.connect();
+  const client = await connectWithRetry(DATABASE_URL);
+  if (client) {
+    dbClient = client;
     dbConnected = true;
-  } catch {
-    // DB may not be reachable; tests that need it will fail individually
   }
 });
 
