@@ -142,6 +142,8 @@ Commands for verifying the iOS Notes App (`ultrawork/e2e-test-ios`) against this
 
 **Prerequisites:** Backend running on `localhost:4000`, Xcode 15+, iOS 17 simulator, `Info.plist` with `BASE_URL = http://localhost:4000/api`.
 
+> **Note:** All `xcodebuild` and `xcrun simctl` commands below must be run from the root of the iOS repository (`ultrawork/e2e-test-ios`), not from this backend repo.
+
 ### Unit Tests
 
 ```bash
