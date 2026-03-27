@@ -8,6 +8,6 @@ import com.ultrawork.notes.model.Note
  */
 interface NotesRepository {
     suspend fun getNotes(): Result<List<Note>>
-    suspend fun createNote(title: String): Result<Note>
+    suspend fun createNote(title: String, content: String): Result<Note>
     suspend fun deleteNote(id: String): Result<Unit>
 }

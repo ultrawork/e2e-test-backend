@@ -18,8 +18,8 @@ class NotesRepositoryImpl @Inject constructor(
         apiService.getNotes().map { it.toDomain() }
     }
 
-    override suspend fun createNote(title: String): Result<Note> = runCatching {
-        val request = CreateNoteRequest(title = title, content = title)
+    override suspend fun createNote(title: String, content: String): Result<Note> = runCatching {
+        val request = CreateNoteRequest(title = title, content = content)
         apiService.createNote(request).toDomain()
     }
 

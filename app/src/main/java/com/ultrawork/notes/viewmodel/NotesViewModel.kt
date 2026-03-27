@@ -46,11 +46,11 @@ class NotesViewModel @Inject constructor(
     }
 
     /** Creates a note and reloads the list on success. */
-    fun createNote(title: String) {
+    fun createNote(title: String, content: String) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
-            repository.createNote(title)
+            repository.createNote(title, content)
                 .onSuccess { loadNotes() }
                 .onFailure {
                     _error.value = it.message
