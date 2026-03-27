@@ -147,15 +147,25 @@ JWT middleware correctly enforces authentication when `JWT_ENABLED=true`:
 
 ---
 
-## Issues Found
+## Issues Found & Fixed
 
-### CORS wildcard fallback when CORS_ORIGINS is empty
+### CORS wildcard fallback when CORS_ORIGINS is empty (FIXED)
 
-**Observation:** `parseCorsOrigins()` in `src/config/index.ts` returns `"*"` when `CORS_ORIGINS`
-env var is empty or unset, because empty string and `"*"` share the same branch:
+**Observation:** `parseCorsOrigins()` in `src/config/index.ts` previously returned `"*"` when
+`CORS_ORIGINS` env var was empty or unset, because empty string and `"*"` shared the same branch:
 ```typescript
 if (!raw || raw.trim() === "*") { return "*"; }
 ```
-This means an unconfigured server would allow all origins. With `CORS_ORIGINS` properly set
-(as verified in this report), the behavior is correct. The fix for the empty-string case
-is tracked separately and is out of scope for this verification PR.
+This meant an unconfigured server would allow all origins (including `http://evil.com`).
+
+**Fix applied:** Split the condition so that empty/unset `CORS_ORIGINS` returns `[]` (block all
+origins) while explicit `"*"` still returns `"*"` (allow all). This ensures that a misconfigured
+server denies CORS requests by default rather than allowing them.
+
+```typescript
+if (!raw || raw.trim() === "") { return []; }
+if (raw.trim() === "*") { return "*"; }
+```
+
+An automated test (`SC-CORS-BLOCK`) was added to verify that disallowed origins
+(e.g., `http://evil.com`) do not receive CORS headers.

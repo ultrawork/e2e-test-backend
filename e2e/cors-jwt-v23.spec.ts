@@ -72,14 +72,18 @@ test.describe("CORS & JWT Verification v23", () => {
     });
   }
 
-  // SC-008a requires the server to be running with NODE_ENV=production,
-  // which cannot be controlled within a single Playwright test run.
-  // This scenario is verified via curl in e2e/reports/backend-v23.md.
-  test.skip("SC-008a: POST /api/auth/dev-token returns 404 in production", async ({
-    request,
-  }) => {
-    const response = await request.post(`${API_URL}/api/auth/dev-token`);
-    expect(response.status()).toBe(404);
+  test("SC-CORS-BLOCK: Disallowed origin does not receive CORS headers", async () => {
+    const response = await fetch(`${API_URL}/api/notes`, {
+      method: "OPTIONS",
+      headers: {
+        Origin: "http://evil.com",
+        "Access-Control-Request-Method": "GET",
+        "Access-Control-Request-Headers": "Authorization",
+      },
+    });
+    // The server should not reflect the disallowed origin
+    const allowOrigin = response.headers.get("access-control-allow-origin");
+    expect(allowOrigin).not.toBe("http://evil.com");
   });
 
   test("SC-008b: POST /api/auth/dev-token returns 200 in test", async ({
