@@ -69,6 +69,7 @@ The API will be available at `http://localhost:3000`.
 | `POST` | `/api/auth/register` | Register new user |
 | `POST` | `/api/auth/login` | Login |
 | `POST` | `/api/auth/logout` | Logout |
+| `POST` | `/api/auth/dev-token` | Issue dev JWT (disabled in production) |
 | `DELETE` | `/api/auth/account` | Delete account |
 | `GET` | `/api/notes` | List notes |
 | `GET` | `/api/notes/:id` | Get note by ID |
@@ -138,4 +139,35 @@ CORS_ORIGINS=*
 
 ## Environment Variables
 
-See [.env.example](.env.example) for the full list of required environment variables.
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `JWT_SECRET` | Yes | Secret key for signing JWT tokens |
+| `JWT_ENABLED` | Yes | Enable JWT auth (`true`/`false`). When `false`, uses default dev user |
+| `CORS_ORIGINS` | Yes | Comma-separated list of allowed origins, or `*` for all |
+| `PORT` | No | Server port (default: `3000`) |
+| `NODE_ENV` | No | Environment: `development`, `test`, or `production` |
+
+See [.env.example](.env.example) for the full template, including deployment variables (`VPS_HOST`, `VPS_USER`, etc.) not listed above.
+
+## Verifying CORS & JWT Locally
+
+```bash
+# 1. Start the server
+docker compose up -d
+
+# 2. Check health
+curl http://localhost:3000/health
+
+# 3. Get a dev JWT token (only works in dev/test)
+curl -s -X POST http://localhost:3000/api/auth/dev-token | jq .
+
+# 4. Use the token to access protected endpoints
+TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/dev-token | jq -r .token)
+curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/notes
+
+# 5. Verify CORS preflight for an allowed origin
+curl -I -X OPTIONS http://localhost:3000/api/notes \
+  -H "Origin: http://localhost:3000" \
+  -H "Access-Control-Request-Method: GET"
+```
