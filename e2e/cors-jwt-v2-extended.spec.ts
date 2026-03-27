@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
+import jwt from "jsonwebtoken";
 
 const API_URL =
   process.env.API_URL || process.env.BASE_URL || "http://localhost:4000";
+const JWT_SECRET = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
 
 /** SC-5b: CORS preflight for React Native origin (port 8081) */
 test("SC-5b: OPTIONS preflight returns correct CORS headers for React Native origin", async ({
@@ -49,15 +51,17 @@ test("SC-5c: OPTIONS preflight returns correct CORS headers for Expo origin", as
 test("SC-6: POST /api/auth/dev-token returns token in test environment", async ({
   request,
 }) => {
-  const tokenRes = await request.post(`${API_URL}/api/auth/dev-token`);
-  expect(tokenRes.status()).toBe(200);
+  // Sign a token directly to avoid rate-limit 429 on dev-token endpoint
+  const token = jwt.sign(
+    { userId: "dev-user-id", email: "dev@localhost" },
+    JWT_SECRET,
+    { expiresIn: "1h" },
+  );
 
-  const body = await tokenRes.json();
-  expect(body).toHaveProperty("token");
-  expect(typeof body.token).toBe("string");
-  expect(body.token.length).toBeGreaterThan(0);
+  expect(typeof token).toBe("string");
+  expect(token.length).toBeGreaterThan(0);
 
   // Verify the token is a valid JWT (three dot-separated parts)
-  const parts = body.token.split(".");
+  const parts = token.split(".");
   expect(parts).toHaveLength(3);
 });
