@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
+import jwt from "jsonwebtoken";
 
 const API_URL = process.env.API_URL || process.env.BASE_URL || "http://localhost:4000";
+const JWT_SECRET = process.env.JWT_SECRET || "e2e-test-secret-key-ultrawork";
 
 test.describe("CORS/JWT Verification v22", () => {
   test("SC-1: GET /health returns 200 and status ok", async ({ request }) => {
@@ -22,13 +24,12 @@ test.describe("CORS/JWT Verification v22", () => {
   test("SC-3: dev-token + authorized access to /api/notes", async ({
     request,
   }) => {
-    const tokenResponse = await request.post(
-      `${API_URL}/api/auth/dev-token`,
+    // Sign a token directly to avoid rate-limit 429 on dev-token endpoint
+    const token = jwt.sign(
+      { userId: "e2e-test-user", email: "e2e@test.local" },
+      JWT_SECRET,
+      { expiresIn: "1h" },
     );
-    expect(tokenResponse.status()).toBe(200);
-    const tokenBody = await tokenResponse.json();
-    expect(tokenBody).toHaveProperty("token");
-    const token = tokenBody.token;
     expect(typeof token).toBe("string");
     expect(token.split(".").length).toBe(3);
 

@@ -49,10 +49,16 @@ test("SC-5c: OPTIONS preflight returns correct CORS headers for Expo origin", as
 test("SC-6: POST /api/auth/dev-token returns token in test environment", async ({
   request,
 }) => {
-  const tokenRes = await request.post(`${API_URL}/api/auth/dev-token`);
-  expect(tokenRes.status()).toBe(200);
+  // Retry with backoff to handle 429 rate-limit responses
+  let tokenRes;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    tokenRes = await request.post(`${API_URL}/api/auth/dev-token`);
+    if (tokenRes.status() !== 429) break;
+    await new Promise((r) => setTimeout(r, (attempt + 1) * 2000));
+  }
+  expect(tokenRes!.status()).toBe(200);
 
-  const body = await tokenRes.json();
+  const body = await tokenRes!.json();
   expect(body).toHaveProperty("token");
   expect(typeof body.token).toBe("string");
   expect(body.token.length).toBeGreaterThan(0);
