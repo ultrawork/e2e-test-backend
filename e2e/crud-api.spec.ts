@@ -280,71 +280,104 @@ test.describe("Categories & Notes CRUD API", () => {
   });
 
   test("SC-007: Validation when creating note", async ({ request }) => {
+    // Retry helper to handle transient 429 rate-limit responses
+    async function postExpecting400(data: object) {
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const res = await request.post(`${API_URL}/api/notes`, {
+          headers: authHeaders(),
+          data,
+        });
+        if (res.status() !== 429) return res;
+        await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+      }
+      // Final attempt — return whatever status we get
+      return request.post(`${API_URL}/api/notes`, {
+        headers: authHeaders(),
+        data,
+      });
+    }
+
     // Missing title
-    const r1 = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
-      data: { content: "Без заголовка" },
-    });
+    const r1 = await postExpecting400({ content: "Без заголовка" });
     expect(r1.status()).toBe(400);
     expect((await r1.json()).error).toBeTruthy();
 
     // Missing content
-    const r2 = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
-      data: { title: "Без контента" },
-    });
+    const r2 = await postExpecting400({ title: "Без контента" });
     expect(r2.status()).toBe(400);
     expect((await r2.json()).error).toBeTruthy();
 
     // Non-existent category
-    const r3 = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
-      data: { title: "Тест", content: "Тест", categoryIds: ["00000000-0000-0000-0000-000000000000"] },
-    });
+    const r3 = await postExpecting400({ title: "Тест", content: "Тест", categoryIds: ["00000000-0000-0000-0000-000000000000"] });
     expect(r3.status()).toBe(400);
     expect((await r3.json()).error).toBeTruthy();
   });
 
   test("SC-008: Update note categories via set", async ({ request }) => {
+    // Retry helper to handle transient 429 rate-limit responses
+    async function retryOn429(
+      fn: () => Promise<any>,
+      maxRetries = 4
+    ) {
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const res = await fn();
+        if (res.status() !== 429) return res;
+        await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+      }
+      return fn();
+    }
+
     // Create 3 categories
-    const catARes = await request.post(`${API_URL}/api/categories`, {
-      headers: authHeaders(),
-      data: { name: "A", color: "#AA0000" },
-    });
+    const catARes = await retryOn429(() =>
+      request.post(`${API_URL}/api/categories`, {
+        headers: authHeaders(),
+        data: { name: "A", color: "#AA0000" },
+      })
+    );
     const catA = (await catARes.json()).id;
 
-    const catBRes = await request.post(`${API_URL}/api/categories`, {
-      headers: authHeaders(),
-      data: { name: "B", color: "#00BB00" },
-    });
+    const catBRes = await retryOn429(() =>
+      request.post(`${API_URL}/api/categories`, {
+        headers: authHeaders(),
+        data: { name: "B", color: "#00BB00" },
+      })
+    );
     const catB = (await catBRes.json()).id;
 
-    const catCRes = await request.post(`${API_URL}/api/categories`, {
-      headers: authHeaders(),
-      data: { name: "C", color: "#0000CC" },
-    });
+    const catCRes = await retryOn429(() =>
+      request.post(`${API_URL}/api/categories`, {
+        headers: authHeaders(),
+        data: { name: "C", color: "#0000CC" },
+      })
+    );
     const catC = (await catCRes.json()).id;
 
     // Create note with A and B
-    const noteRes = await request.post(`${API_URL}/api/notes`, {
-      headers: authHeaders(),
-      data: { title: "Тест", content: "Тест", categoryIds: [catA, catB] },
-    });
+    const noteRes = await retryOn429(() =>
+      request.post(`${API_URL}/api/notes`, {
+        headers: authHeaders(),
+        data: { title: "Тест", content: "Тест", categoryIds: [catA, catB] },
+      })
+    );
     expect(noteRes.status()).toBe(201);
     const noteId = (await noteRes.json()).id;
 
     // Verify initial categories
-    const getRes = await request.get(`${API_URL}/api/notes/${noteId}`, { headers: authHeaders() });
+    const getRes = await retryOn429(() =>
+      request.get(`${API_URL}/api/notes/${noteId}`, { headers: authHeaders() })
+    );
     const initial = await getRes.json();
     expect(initial.categories).toHaveLength(2);
     const initialIds = initial.categories.map((c: any) => c.id).sort();
     expect(initialIds).toEqual([catA, catB].sort());
 
     // Set to B and C
-    const updateRes = await request.put(`${API_URL}/api/notes/${noteId}`, {
-      headers: authHeaders(),
-      data: { title: "Тест", content: "Тест", categoryIds: [catB, catC] },
-    });
+    const updateRes = await retryOn429(() =>
+      request.put(`${API_URL}/api/notes/${noteId}`, {
+        headers: authHeaders(),
+        data: { title: "Тест", content: "Тест", categoryIds: [catB, catC] },
+      })
+    );
     expect(updateRes.status()).toBe(200);
     const updated = await updateRes.json();
     expect(updated.categories).toHaveLength(2);
@@ -352,10 +385,12 @@ test.describe("Categories & Notes CRUD API", () => {
     expect(updatedIds).toEqual([catB, catC].sort());
 
     // Set to empty
-    const clearRes = await request.put(`${API_URL}/api/notes/${noteId}`, {
-      headers: authHeaders(),
-      data: { title: "Тест", content: "Тест", categoryIds: [] },
-    });
+    const clearRes = await retryOn429(() =>
+      request.put(`${API_URL}/api/notes/${noteId}`, {
+        headers: authHeaders(),
+        data: { title: "Тест", content: "Тест", categoryIds: [] },
+      })
+    );
     expect(clearRes.status()).toBe(200);
     const cleared = await clearRes.json();
     expect(cleared.categories).toHaveLength(0);
