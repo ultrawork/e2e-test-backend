@@ -30,6 +30,12 @@ test.beforeAll(async () => {
   if (client) {
     dbClient = client;
     dbConnected = true;
+
+    // Ensure legacy category enum column is dropped from notes table
+    // (may not have been dropped if global-setup failed to connect)
+    await dbClient.query(`
+      ALTER TABLE IF EXISTS "notes" DROP COLUMN IF EXISTS "category";
+    `);
   }
 });
 

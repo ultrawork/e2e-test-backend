@@ -5,10 +5,26 @@ import * as path from "path";
 const DATABASE_URL =
   process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/notes";
 
+async function connectWithRetry(connectionString: string, retries = 5, delayMs = 2000): Promise<Client | null> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const client = new Client({ connectionString });
+    try {
+      await client.connect();
+      return client;
+    } catch {
+      try { await client.end(); } catch { /* ignore */ }
+      if (attempt < retries) {
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
+    }
+  }
+  return null;
+}
+
 async function ensureJoinTable(connectionString: string) {
-  const client = new Client({ connectionString });
+  const client = await connectWithRetry(connectionString);
+  if (!client) return;
   try {
-    await client.connect();
 
     // Drop legacy category enum column from notes table if it exists
     await client.query(`
