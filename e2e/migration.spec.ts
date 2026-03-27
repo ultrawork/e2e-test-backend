@@ -6,13 +6,22 @@ const DATABASE_URL =
 
 let dbClient: Client;
 
+let dbConnected = false;
+
 test.beforeAll(async () => {
   dbClient = new Client({ connectionString: DATABASE_URL });
-  await dbClient.connect();
+  try {
+    await dbClient.connect();
+    dbConnected = true;
+  } catch {
+    // DB may not be reachable; tests that need it will fail individually
+  }
 });
 
 test.afterAll(async () => {
-  await dbClient.end();
+  if (dbConnected) {
+    await dbClient.end();
+  }
 });
 
 test.describe("Database Migration - Category M:N", () => {
@@ -24,6 +33,7 @@ test.describe("Database Migration - Category M:N", () => {
   });
 
   test("SC-002: Migration creates categories table with correct structure", async () => {
+    expect(dbConnected, "Database connection required").toBe(true);
     const result = await dbClient.query(
       `SELECT column_name, data_type, column_default
        FROM information_schema.columns
@@ -56,6 +66,7 @@ test.describe("Database Migration - Category M:N", () => {
   });
 
   test("SC-003: Migration creates _CategoryToNote join table with cascading deletes", async () => {
+    expect(dbConnected, "Database connection required").toBe(true);
     // Verify table exists
     const tableResult = await dbClient.query(
       `SELECT tablename FROM pg_tables WHERE tablename = '_CategoryToNote'`
@@ -87,6 +98,7 @@ test.describe("Database Migration - Category M:N", () => {
   });
 
   test("SC-004: Old category enum field removed from notes table", async () => {
+    expect(dbConnected, "Database connection required").toBe(true);
     const result = await dbClient.query(
       `SELECT column_name
        FROM information_schema.columns
