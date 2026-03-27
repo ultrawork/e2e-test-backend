@@ -136,6 +136,65 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:8081,http://localhost:19006
 CORS_ORIGINS=*
 ```
 
+## iOS E2E Verification
+
+Commands for verifying the iOS Notes App (`ultrawork/e2e-test-ios`) against this backend.
+
+**Prerequisites:** Backend running on `localhost:4000`, Xcode 15+, iOS 17 simulator, `Info.plist` with `BASE_URL = http://localhost:4000/api`.
+
+### Unit Tests
+
+```bash
+xcodebuild -project NotesApp/NotesApp.xcodeproj \
+  -scheme NotesAppTests \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  test 2>&1 | grep -E "Test Case|TEST SUCCEEDED|TEST FAILED|error:"
+```
+
+### Simulator: Set Valid Token
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:4000/api/auth/dev-token | jq -r '.token')
+xcrun simctl spawn booted defaults write com.ultrawork.notes token "$TOKEN"
+```
+
+### Simulator: Set Invalid Token
+
+```bash
+xcrun simctl spawn booted defaults write com.ultrawork.notes token "invalid-token"
+```
+
+### Simulator: Clear Token
+
+```bash
+xcrun simctl spawn booted defaults delete com.ultrawork.notes token
+```
+
+### Build, Install and Launch App on Simulator
+
+```bash
+xcodebuild -project NotesApp/NotesApp.xcodeproj \
+  -scheme NotesApp \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  build
+
+xcrun simctl install booted NotesApp/build/Build/Products/Debug-iphonesimulator/NotesApp.app
+xcrun simctl launch booted com.ultrawork.notes
+```
+
+### API Verification (curl)
+
+```bash
+# GET /api/notes with valid token → 200
+TOKEN=$(curl -s -X POST http://localhost:4000/api/auth/dev-token | jq -r '.token')
+curl -s -w "\nHTTP_STATUS:%{http_code}\n" \
+  -H "Authorization: Bearer $TOKEN" \
+  http://localhost:4000/api/notes
+
+# GET /api/notes without token → 401
+curl -s -w "\nHTTP_STATUS:%{http_code}\n" http://localhost:4000/api/notes
+```
+
 ## Environment Variables
 
 See [.env.example](.env.example) for the full list of required environment variables.
