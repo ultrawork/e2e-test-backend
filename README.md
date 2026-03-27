@@ -148,7 +148,7 @@ CORS_ORIGINS=*
 | `PORT` | No | Server port (default: `3000`) |
 | `NODE_ENV` | No | Environment: `development`, `test`, or `production` |
 
-See [.env.example](.env.example) for the full template.
+See [.env.example](.env.example) for the full template, including deployment variables (`VPS_HOST`, `VPS_USER`, etc.) not listed above.
 
 ## Verifying CORS & JWT Locally
 

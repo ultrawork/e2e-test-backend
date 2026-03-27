@@ -5,8 +5,10 @@
 **Server:** Express.js via `ts-node-dev`
 **Configuration:**
 - `JWT_ENABLED=true`
-- `JWT_SECRET=e2e-test-secret-key-ultrawork`
+- `JWT_SECRET=<test value, set via .env>`
 - `CORS_ORIGINS=http://localhost:3000,http://localhost:8081,http://localhost:19006`
+
+**`.env.example` verification:** Confirmed that `.env.example` already contains the correct values for `CORS_ORIGINS` (three origins), `JWT_ENABLED=true`, and `JWT_SECRET` (empty placeholder). No changes to `.env.example` were required.
 
 ---
 
@@ -24,7 +26,7 @@
 | SC-008a | POST `/api/auth/dev-token` (production) | 404 | 404 | **PASS** |
 | SC-008b | POST `/api/auth/dev-token` (test) | 200 | 200 | **PASS** |
 
-**Verdict: ALL PASS (9/9)**
+**Verdict: ALL PASS (9/9 test cases across 8 scenarios, SC-008 split into a/b)**
 
 ---
 
