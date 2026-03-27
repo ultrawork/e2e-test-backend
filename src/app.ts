@@ -11,20 +11,7 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. server-to-server, curl)
-      if (!origin) {
-        return callback(null, true);
-      }
-      if (config.corsOrigins === "*") {
-        return callback(null, true);
-      }
-      if (config.corsOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      // Disallowed origin — do not reflect
-      return callback(null, false);
-    },
+    origin: config.corsOrigins === "*" ? true : config.corsOrigins,
     credentials: true,
   })
 );

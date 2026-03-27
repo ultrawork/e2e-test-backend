@@ -149,7 +149,7 @@ JWT middleware correctly enforces authentication when `JWT_ENABLED=true`:
 
 ## Issues Found & Fixed
 
-### CORS wildcard fallback when CORS_ORIGINS is empty (FIXED)
+### 1. CORS wildcard fallback when CORS_ORIGINS is empty (FIXED)
 
 **Observation:** `parseCorsOrigins()` in `src/config/index.ts` previously returned `"*"` when
 `CORS_ORIGINS` env var was empty or unset, because empty string and `"*"` shared the same branch:
@@ -167,5 +167,25 @@ if (!raw || raw.trim() === "") { return []; }
 if (raw.trim() === "*") { return "*"; }
 ```
 
-An automated test (`SC-CORS-BLOCK`) was added to verify that disallowed origins
-(e.g., `http://evil.com`) do not receive CORS headers.
+### 2. CORS origin callback replaced with static configuration (FIXED)
+
+**Observation:** The previous `cors({ origin: (origin, callback) => { ... callback(null, false) } })`
+pattern relied on the `cors` package interpreting `callback(null, false)` as "do not set CORS headers".
+While this works with the current cors version, the behavior is an implementation detail that may
+change across versions (the verifier flagged cors@2.8.6 echoing disallowed origins in some configurations).
+
+**Fix applied:** Replaced the dynamic callback with a static `origin` array:
+```typescript
+cors({
+  origin: config.corsOrigins === "*" ? true : config.corsOrigins,
+  credentials: true,
+})
+```
+The `cors` package natively handles array-based origin matching via `isOriginAllowed()` and sets
+`Access-Control-Allow-Origin` header value to `false` (which `applyHeaders()` skips) for non-matching
+origins. This removes reliance on callback behavior and is the documented approach.
+
+**Unit test added:** `src/app.test.ts` verifies that allowed origins receive CORS headers while
+disallowed origins (e.g., `http://evil.com`) do not.
+
+An automated E2E test (`SC-CORS-BLOCK` in `e2e/cors-jwt-v23.spec.ts`) also validates this behavior.
