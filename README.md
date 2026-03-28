@@ -136,6 +136,40 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:8081,http://localhost:19006
 CORS_ORIGINS=*
 ```
 
+## E2E v25: Верификация CORS/JWT
+
+E2E-верификация CORS и JWT middleware для версии v25. Подтверждает стабильность API для клиентов web, iOS и Android.
+
+**Файлы:**
+- Сценарии: [`e2e/scenarios/cors-jwt-v25.md`](e2e/scenarios/cors-jwt-v25.md) — 9 сценариев (SC-001..SC-009)
+- Спецификация: [`e2e/cors-jwt-v25.spec.ts`](e2e/cors-jwt-v25.spec.ts)
+- Отчёт: [`e2e/reports/backend-v25.md`](e2e/reports/backend-v25.md)
+
+### Переменные окружения
+
+| Переменная | Значение |
+|---|---|
+| `CORS_ORIGINS` | `http://localhost:3000,http://localhost:8081,http://localhost:19006` |
+| `JWT_ENABLED` | `true` |
+| `JWT_SECRET` | `e2e-test-secret-key-ultrawork` |
+| `PORT` | `4000` |
+
+### Команды запуска
+
+```sh
+# Запуск сервера с нужными переменными
+JWT_ENABLED=true JWT_SECRET=e2e-test-secret-key-ultrawork \
+  CORS_ORIGINS=http://localhost:3000,http://localhost:8081,http://localhost:19006 \
+  PORT=4000 npm run dev
+
+# Запуск E2E тестов v25 (в отдельном терминале)
+JWT_ENABLED=true JWT_SECRET=e2e-test-secret-key-ultrawork \
+  CORS_ORIGINS=http://localhost:3000,http://localhost:8081,http://localhost:19006 \
+  npx playwright test e2e/cors-jwt-v25.spec.ts
+```
+
+**Результат:** PASS 9/9 — API стабильно для web, iOS (Expo Go) и Android (React Native) клиентов.
+
 ## Environment Variables
 
 See [.env.example](.env.example) for the full list of required environment variables.
