@@ -139,3 +139,61 @@ CORS_ORIGINS=*
 ## Environment Variables
 
 See [.env.example](.env.example) for the full list of required environment variables.
+
+## E2E v24: Верификация CORS_ORIGINS и JWT middleware
+
+Документация по E2E-верификации CORS и JWT middleware в версии v24.
+
+- **Сценарий:** [e2e/scenarios/cors-jwt-v24.md](e2e/scenarios/cors-jwt-v24.md)
+- **Отчёт:** [e2e/reports/backend-v24.md](e2e/reports/backend-v24.md)
+
+### Конфигурация окружения (.env)
+
+```env
+JWT_ENABLED=true
+JWT_SECRET=e2e-test-secret-key-ultrawork
+CORS_ORIGINS=http://localhost:3000,http://localhost:8081,http://localhost:19006
+NODE_ENV=development
+```
+
+### Примеры curl-запросов
+
+```sh
+# Health check (SC-001)
+curl -s http://localhost:4000/health
+# → {"status":"ok"}
+
+# Без токена — 401 (SC-002)
+curl -s -o /dev/null -w "%{http_code}" http://localhost:4000/api/notes
+# → 401
+
+# Получить dev-token (SC-003)
+TOKEN=$(curl -s -X POST http://localhost:4000/api/auth/dev-token | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+
+# Авторизованный запрос — 200 (SC-003)
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:4000/api/notes
+# → [] или массив заметок
+
+# CORS preflight для Web origin (SC-005)
+curl -s -o /dev/null -w "%{http_code}" -X OPTIONS \
+  -H "Origin: http://localhost:3000" \
+  -H "Access-Control-Request-Method: GET" \
+  http://localhost:4000/api/notes
+# → 204
+
+# CORS preflight для Android origin (SC-004)
+curl -s -o /dev/null -w "%{http_code}" -X OPTIONS \
+  -H "Origin: http://localhost:8081" \
+  -H "Access-Control-Request-Method: GET" \
+  http://localhost:4000/api/notes
+# → 204
+
+# CORS preflight для Expo origin (SC-006)
+curl -s -o /dev/null -w "%{http_code}" -X OPTIONS \
+  -H "Origin: http://localhost:19006" \
+  -H "Access-Control-Request-Method: GET" \
+  http://localhost:4000/api/notes
+# → 204
+```
+
+Результаты верификации: все 9 сценариев — **PASS**.
