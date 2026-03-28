@@ -1,6 +1,11 @@
+const DEFAULT_CORS_ORIGINS = "http://localhost:3000,http://localhost:8081,http://localhost:19006";
+
 /** Parses CORS_ORIGINS env variable into a list of origins or wildcard. */
 function parseCorsOrigins(raw: string): string[] | "*" {
-  if (!raw || raw.trim() === "*") {
+  if (!raw) {
+    return DEFAULT_CORS_ORIGINS.split(",");
+  }
+  if (raw.trim() === "*") {
     return "*";
   }
   return raw.split(",").map((origin) => origin.trim()).filter(Boolean);
