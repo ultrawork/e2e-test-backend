@@ -1,41 +1,30 @@
 import { test, expect } from "@playwright/test";
 import { Client } from "pg";
 
-const API_URL = process.env.API_URL || process.env.BASE_URL || "http://localhost:4000";
-
 const DATABASE_URL =
   process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/notes";
 
-let dbClient: Client | null = null;
+let dbClient: Client;
 
 test.beforeAll(async () => {
-  try {
-    const client = new Client({ connectionString: DATABASE_URL });
-    await client.connect();
-    dbClient = client;
-  } catch {
-    // DB connection may not be available; tests that need it will be skipped
-    console.warn("Could not connect to database:", DATABASE_URL);
-  }
+  dbClient = new Client({ connectionString: DATABASE_URL });
+  await dbClient.connect();
 });
 
 test.afterAll(async () => {
-  if (dbClient) {
-    await dbClient.end();
-  }
+  await dbClient.end();
 });
 
 test.describe("Database Migration - Category M:N", () => {
   test("SC-001: Health endpoint works after migration", async ({ request }) => {
-    const response = await request.get(`${API_URL}/health`);
+    const response = await request.get("/health");
     expect(response.status()).toBe(200);
     const body = await response.json();
     expect(body).toEqual({ status: "ok" });
   });
 
   test("SC-002: Migration creates categories table with correct structure", async () => {
-    test.skip(!dbClient, "Database connection not available");
-    const result = await dbClient!.query(
+    const result = await dbClient.query(
       `SELECT column_name, data_type, column_default
        FROM information_schema.columns
        WHERE table_name = 'categories'
@@ -67,15 +56,14 @@ test.describe("Database Migration - Category M:N", () => {
   });
 
   test("SC-003: Migration creates _CategoryToNote join table with cascading deletes", async () => {
-    test.skip(!dbClient, "Database connection not available");
     // Verify table exists
-    const tableResult = await dbClient!.query(
+    const tableResult = await dbClient.query(
       `SELECT tablename FROM pg_tables WHERE tablename = '_CategoryToNote'`
     );
     expect(tableResult.rows).toHaveLength(1);
 
     // Verify FK constraints with CASCADE delete
-    const fkResult = await dbClient!.query(
+    const fkResult = await dbClient.query(
       `SELECT conname, confdeltype
        FROM pg_constraint
        WHERE conrelid = '"_CategoryToNote"'::regclass AND contype = 'f'
@@ -99,8 +87,7 @@ test.describe("Database Migration - Category M:N", () => {
   });
 
   test("SC-004: Old category enum field removed from notes table", async () => {
-    test.skip(!dbClient, "Database connection not available");
-    const result = await dbClient!.query(
+    const result = await dbClient.query(
       `SELECT column_name
        FROM information_schema.columns
        WHERE table_name = 'notes'`

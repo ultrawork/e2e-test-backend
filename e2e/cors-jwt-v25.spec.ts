@@ -45,6 +45,10 @@ test.describe("CORS/JWT Verification v25", () => {
   });
 
   // SC-004: CORS preflight accepted for web client (React/Next.js)
+  // Note: global fetch() is used for SC-004/005/006/009 instead of Playwright `request` because
+  // Playwright's APIRequestContext does not forward arbitrary OPTIONS preflight headers the same
+  // way a browser does. Using global fetch() gives direct control over Origin and
+  // Access-Control-Request-Method headers and faithfully simulates the browser preflight.
   test("SC-004: OPTIONS preflight with Origin http://localhost:3000 returns 204 and CORS headers", async () => {
     const origin = "http://localhost:3000";
     const response = await fetch(`${API_URL}/api/notes`, {
@@ -136,8 +140,9 @@ test.describe("CORS/JWT Verification v25", () => {
         "Access-Control-Request-Method": "GET",
       },
     });
-    // CORS middleware with callback-based origin validation should reject unknown origins:
-    // The Access-Control-Allow-Origin header must NOT reflect the evil origin back
+    // CORS middleware only allows origins from CORS_ORIGINS whitelist.
+    // Unknown origins receive no Access-Control-Allow-Origin header (or a value that
+    // does not match the requested origin).
     const allowOrigin = response.headers.get("access-control-allow-origin");
     expect(allowOrigin).not.toBe(evilOrigin);
     // Wildcard '*' with credentials is also a CORS misconfiguration

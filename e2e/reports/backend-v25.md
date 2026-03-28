@@ -92,21 +92,19 @@ Tests:       48 passed, 48 total
 
 ### CORS Middleware
 
-CORS middleware использует `CORS_ORIGINS` из переменной окружения с callback-based origin validation:
+CORS middleware использует `CORS_ORIGINS` из переменной окружения как whitelist разрешённых origins:
 
 ```typescript
-const allowedOrigins = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
 app.use(cors({
-  origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) cb(null, true);
-    else cb(new Error('Not allowed by CORS'));
-  },
-  credentials: true
+  origin: config.corsOrigins === "*" ? true : config.corsOrigins,
+  credentials: true,
 }));
 ```
 
+`parseCorsOrigins` парсит `CORS_ORIGINS` в массив origins (или `"*"` для режима wildcard). При пустом `CORS_ORIGINS` возвращается `"*"` (разрешить всё) — безопасное дефолтное поведение для dev-окружений.
+
 - Origins из `CORS_ORIGINS` разрешены (SC-004, SC-005, SC-006 — PASS)
-- Неизвестные origins блокируются (SC-009 — PASS)
+- Неизвестные origins не получают заголовок `Access-Control-Allow-Origin` (SC-009 — PASS)
 
 ### JWT Middleware
 

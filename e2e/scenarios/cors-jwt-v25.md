@@ -158,9 +158,9 @@
 - `Access-Control-Request-Method: GET`
 
 **Ожидаемый результат:**
-- Статус: `500` (ошибка CORS) или заголовок `Access-Control-Allow-Origin` отсутствует/не совпадает с origin
+- Заголовок `Access-Control-Allow-Origin` отсутствует или не совпадает с запрошенным origin (origin не попадает в whitelist `CORS_ORIGINS`)
 
-**Вывод:** CORS middleware с callback-based origin validation корректно отклоняет неизвестные origins.
+**Вывод:** CORS middleware корректно отклоняет origins, не входящих в `CORS_ORIGINS` whitelist.
 
 ---
 
