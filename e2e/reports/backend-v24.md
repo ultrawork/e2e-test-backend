@@ -163,9 +163,9 @@ curl -v -X OPTIONS \
 
 **Ответ:**
 ```
-< HTTP/1.1 500 Internal Server Error
+< HTTP/1.1 204 No Content
 ```
-_(Заголовок `access-control-allow-origin` отсутствует в ответе)_
+_(Заголовок `access-control-allow-origin` отсутствует в ответе — CORS заблокирован)_
 
 **Вердикт:** PASS
 

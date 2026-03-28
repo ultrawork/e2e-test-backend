@@ -41,9 +41,9 @@ test.describe("CORS/JWT Verification v24", () => {
     expect(Array.isArray(notes)).toBe(true);
   });
 
-  test("SC-004: CORS preflight for Android origin http://localhost:8081", async () => {
+  test("SC-004: CORS preflight for Android origin http://localhost:8081", async ({ request }) => {
     const origin = "http://localhost:8081";
-    const response = await fetch(`${API_URL}/api/notes`, {
+    const response = await request.fetch(`${API_URL}/api/notes`, {
       method: "OPTIONS",
       headers: {
         Origin: origin,
@@ -51,16 +51,14 @@ test.describe("CORS/JWT Verification v24", () => {
         "Access-Control-Request-Headers": "Authorization",
       },
     });
-    expect(response.status).toBe(204);
-    expect(response.headers.get("access-control-allow-origin")).toBe(origin);
-    expect(response.headers.get("access-control-allow-credentials")).toBe(
-      "true",
-    );
+    expect(response.status()).toBe(204);
+    expect(response.headers()["access-control-allow-origin"]).toBe(origin);
+    expect(response.headers()["access-control-allow-credentials"]).toBe("true");
   });
 
-  test("SC-005: CORS preflight for Web origin http://localhost:3000", async () => {
+  test("SC-005: CORS preflight for Web origin http://localhost:3000", async ({ request }) => {
     const origin = "http://localhost:3000";
-    const response = await fetch(`${API_URL}/api/notes`, {
+    const response = await request.fetch(`${API_URL}/api/notes`, {
       method: "OPTIONS",
       headers: {
         Origin: origin,
@@ -68,16 +66,14 @@ test.describe("CORS/JWT Verification v24", () => {
         "Access-Control-Request-Headers": "Authorization,Content-Type",
       },
     });
-    expect(response.status).toBe(204);
-    expect(response.headers.get("access-control-allow-origin")).toBe(origin);
-    expect(response.headers.get("access-control-allow-credentials")).toBe(
-      "true",
-    );
+    expect(response.status()).toBe(204);
+    expect(response.headers()["access-control-allow-origin"]).toBe(origin);
+    expect(response.headers()["access-control-allow-credentials"]).toBe("true");
   });
 
-  test("SC-006: CORS preflight for Expo origin http://localhost:19006", async () => {
+  test("SC-006: CORS preflight for Expo origin http://localhost:19006", async ({ request }) => {
     const origin = "http://localhost:19006";
-    const response = await fetch(`${API_URL}/api/notes`, {
+    const response = await request.fetch(`${API_URL}/api/notes`, {
       method: "OPTIONS",
       headers: {
         Origin: origin,
@@ -85,23 +81,21 @@ test.describe("CORS/JWT Verification v24", () => {
         "Access-Control-Request-Headers": "Authorization",
       },
     });
-    expect(response.status).toBe(204);
-    expect(response.headers.get("access-control-allow-origin")).toBe(origin);
-    expect(response.headers.get("access-control-allow-credentials")).toBe(
-      "true",
-    );
+    expect(response.status()).toBe(204);
+    expect(response.headers()["access-control-allow-origin"]).toBe(origin);
+    expect(response.headers()["access-control-allow-credentials"]).toBe("true");
   });
 
-  test("SC-007: CORS rejects disallowed origin http://localhost:9999", async () => {
+  test("SC-007: CORS rejects disallowed origin http://localhost:9999", async ({ request }) => {
     const origin = "http://localhost:9999";
-    const response = await fetch(`${API_URL}/api/notes`, {
+    const response = await request.fetch(`${API_URL}/api/notes`, {
       method: "OPTIONS",
       headers: {
         Origin: origin,
         "Access-Control-Request-Method": "GET",
       },
     });
-    const acao = response.headers.get("access-control-allow-origin");
+    const acao = response.headers()["access-control-allow-origin"];
     expect(acao).not.toBe(origin);
   });
 

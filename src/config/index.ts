@@ -1,9 +1,9 @@
 /** Parses CORS_ORIGINS env variable into a list of origins or wildcard. */
-export function parseCorsOrigins(raw: string): string[] | "*" {
-  if (raw && raw.trim() === "*") {
+function parseCorsOrigins(raw: string): string[] | "*" {
+  if (!raw || raw.trim() === "*") {
     return "*";
   }
-  return (raw || "").split(",").map((origin) => origin.trim()).filter(Boolean);
+  return raw.split(",").map((origin) => origin.trim()).filter(Boolean);
 }
 
 export const config = {
