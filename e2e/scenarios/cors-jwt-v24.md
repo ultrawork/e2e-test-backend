@@ -3,7 +3,6 @@
 **Версия:** v24
 **Дата:** 2026-03-28
 **Ветка:** feature/backend-v24-cors-jwt-verification
-**Спек:** e2e/cors-jwt-v24.spec.ts
 
 ---
 

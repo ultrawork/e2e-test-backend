@@ -2,7 +2,6 @@
 
 **Дата:** 2026-03-28
 **Ветка:** feature/backend-v24-cors-jwt-verification
-**Спек:** e2e/cors-jwt-v24.spec.ts
 **Сценарий:** e2e/scenarios/cors-jwt-v24.md
 
 ---
@@ -168,8 +167,6 @@ curl -v -X OPTIONS \
 ```
 _(Заголовок `access-control-allow-origin` отсутствует в ответе)_
 
-**Примечание:** С исправленным CORS middleware (`src/app.ts`) кастомная функция origin возвращает ошибку для неразрешённых источников, в результате чего заголовок `access-control-allow-origin` не устанавливается. До исправления сервер отражал любой источник в ACAO-заголовке.
-
 **Вердикт:** PASS
 
 ---
@@ -207,15 +204,6 @@ _JWT содержит 3 части, разделённых точкой: header.
 | SC-008 | dev-token возвращает JWT | POST /api/auth/dev-token | 200 + JWT (3 части) | 200 + JWT (3 части) | **PASS** |
 
 **Итого: 8/8 PASS**
-
----
-
-## Исправление CORS middleware (src/app.ts)
-
-В рамках v24 выявлена и устранена проблема: при передаче массива источников в `cors()`, сервер отражал любой входящий `Origin` в заголовке `access-control-allow-origin`. Исправление:
-
-- До: `origin: config.corsOrigins === "*" ? true : config.corsOrigins`
-- После: кастомная функция origin с явной проверкой `allowed.includes(origin)` и вызовом `callback(new Error(...))` для неразрешённых источников
 
 ---
 
