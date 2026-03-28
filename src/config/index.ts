@@ -1,6 +1,6 @@
 /** Parses CORS_ORIGINS env variable into a list of origins or wildcard. */
 function parseCorsOrigins(raw: string): string[] | "*" {
-  if (!raw || raw.trim() === "*") {
+  if (raw.trim() === "*") {
     return "*";
   }
   return raw.split(",").map((origin) => origin.trim()).filter(Boolean);
