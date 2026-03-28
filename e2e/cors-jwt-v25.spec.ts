@@ -136,8 +136,11 @@ test.describe("CORS/JWT Verification v25", () => {
         "Access-Control-Request-Method": "GET",
       },
     });
-    // CORS middleware with callback-based origin validation blocks unknown origins
+    // CORS middleware with callback-based origin validation should reject unknown origins:
+    // The Access-Control-Allow-Origin header must NOT reflect the evil origin back
     const allowOrigin = response.headers.get("access-control-allow-origin");
     expect(allowOrigin).not.toBe(evilOrigin);
+    // Wildcard '*' with credentials is also a CORS misconfiguration
+    expect(allowOrigin).not.toBe("*");
   });
 });
