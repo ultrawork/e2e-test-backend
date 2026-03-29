@@ -139,3 +139,44 @@ CORS_ORIGINS=*
 ## Environment Variables
 
 See [.env.example](.env.example) for the full list of required environment variables.
+
+## E2E v26
+
+iOS E2E верификация для `APIService` и `NotesViewModel`.
+
+- **Сценарии:** [e2e/scenarios/ios-notes-v26.md](e2e/scenarios/ios-notes-v26.md)
+- **Отчёт:** [e2e/reports/ios-v26.md](e2e/reports/ios-v26.md)
+- **Результат:** PASS 5/5
+
+### Конфигурация Info.plist
+
+```xml
+<key>API_BASE_URL</key>
+<string>http://localhost:4000/api</string>
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+</dict>
+```
+
+### Получение dev-token с backend
+
+```bash
+curl -s -X POST http://localhost:4000/api/auth/dev-token
+# → {"token": "<jwt-token>"}
+```
+
+### Установка токена в UserDefaults симулятора
+
+```bash
+xcrun simctl spawn booted defaults write com.ultrawork.notes token 'test-token-v26'
+```
+
+### Сборка для симулятора iPhone 14
+
+```bash
+xcodebuild -scheme NotesApp \
+  -destination 'platform=iOS Simulator,name=iPhone 14' \
+  test
+```
