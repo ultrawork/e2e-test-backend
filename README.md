@@ -157,3 +157,13 @@ CORS_ORIGINS="http://localhost:3000,http://localhost:8081,http://localhost:19006
 - SC-4: CORS preflight для http://localhost:3000
 - SC-5: CORS preflight для http://localhost:8081
 - SC-6: CORS preflight для http://localhost:19006
+
+## E2E v28: Верификация CORS/JWT
+
+```bash
+npx playwright test e2e/cors-jwt-v28.spec.ts
+```
+
+- Сценарии: e2e/cors-jwt-v28.spec.ts
+- E2E-отчёт: e2e/reports/backend-v28-20260329T120000Z.md
+- Результат: PASS 6/6
