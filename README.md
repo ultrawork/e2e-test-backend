@@ -139,3 +139,21 @@ CORS_ORIGINS=*
 ## Environment Variables
 
 See [.env.example](.env.example) for the full list of required environment variables.
+
+## E2E CORS/JWT Verification
+
+Запуск спецификации:
+
+```bash
+CORS_ORIGINS="http://localhost:3000,http://localhost:8081,http://localhost:19006" JWT_ENABLED=true JWT_SECRET=e2e-test-secret-key-ultrawork NODE_ENV=development npx playwright test e2e/cors-jwt.spec.ts
+```
+
+Отчёт: [backend-v27-20260329T120000Z.md](e2e/reports/backend-v27-20260329T120000Z.md)
+
+Покрытые сценарии:
+- SC-1: Health check (GET /health → 200)
+- SC-2: 401 без токена (GET /api/notes → 401)
+- SC-3: dev-token + авторизованный доступ (POST /api/auth/dev-token → GET /api/notes)
+- SC-4: CORS preflight для http://localhost:3000
+- SC-5: CORS preflight для http://localhost:8081
+- SC-6: CORS preflight для http://localhost:19006
