@@ -158,4 +158,4 @@ Access-Control-Request-Method: GET
 ```
 
 **Ожидаемый результат:**
-- Заголовок `Access-Control-Allow-Origin` отсутствует или не равен `http://evil.example.com`
+- Заголовок `Access-Control-Allow-Origin` отсутствует (`null`) или равен `"false"` — не допускается возврат `*` или любого другого значения

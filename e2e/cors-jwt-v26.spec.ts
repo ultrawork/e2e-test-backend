@@ -121,6 +121,6 @@ test.describe("CORS/JWT Verification v26", () => {
       },
     });
     const allowOrigin = response.headers.get("access-control-allow-origin");
-    expect(allowOrigin).not.toBe(origin);
+    expect(allowOrigin === null || allowOrigin === "false").toBeTruthy();
   });
 });

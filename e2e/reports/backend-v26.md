@@ -22,7 +22,7 @@
 | SC-006 | OPTIONS /api/notes Origin: exp://127.0.0.1:19006 → 204 + CORS headers | PASS | Preflight accepted for Expo Go iOS client |
 | SC-007 | src/routes/auth.routes.ts contains production guard | PASS | Static check: "production" found in source |
 | SC-008 | POST /api/auth/dev-token in NODE_ENV=test → 200 + valid JWT | PASS | Dev token available in test environment |
-| SC-009 | OPTIONS /api/notes Origin: http://evil.example.com → no ACAO header | PASS | Disallowed origin rejected by CORS middleware |
+| SC-009 | OPTIONS /api/notes Origin: http://evil.example.com → ACAO is null or "false" | PASS | Disallowed origin strictly rejected (null or "false", not just != evil) |
 
 ## Ключевые изменения v26 vs v22
 
