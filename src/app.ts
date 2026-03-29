@@ -11,7 +11,22 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: config.corsOrigins === "*" ? true : config.corsOrigins,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. server-to-server, curl)
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      if (config.corsOrigins === "*") {
+        callback(null, true);
+        return;
+      }
+      if (config.corsOrigins.includes(origin)) {
+        callback(null, origin);
+        return;
+      }
+      callback(null, false);
+    },
     credentials: true,
   })
 );

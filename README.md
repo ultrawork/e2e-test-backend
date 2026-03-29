@@ -136,6 +136,38 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:8081,http://localhost:19006
 CORS_ORIGINS=*
 ```
 
+## E2E v26: Верификация CORS/JWT
+
+Покрывает 9 сценариев: health check, 401 без токена, dev-token + авторизованный доступ, CORS preflight для разрешённых Origins (включая Expo Go `exp://`), production guard, JWT в test-окружении, отклонение неразрешённых Origins.
+
+**Предусловия:**
+- Backend запущен на порту `4000`
+- `NODE_ENV=test` (dev-token эндпоинт доступен)
+- `JWT_ENABLED=true`, `JWT_SECRET` задан
+
+**Команда запуска:**
+
+```bash
+npm ci
+
+API_BASE_URL=http://localhost:4000 \
+  CORS_ORIGINS="http://localhost:3000,http://localhost:8081,exp://127.0.0.1:19006" \
+  NODE_ENV=test \
+  JWT_ENABLED=true \
+  JWT_SECRET=e2e-test-secret-key-ultrawork \
+  npm run e2e -- e2e/cors-jwt-v26.spec.ts
+```
+
+**Пример значения CORS_ORIGINS:**
+
+```env
+CORS_ORIGINS=http://localhost:3000,http://localhost:8081,exp://127.0.0.1:19006
+```
+
+Сценарии: [`e2e/scenarios/cors-jwt-v26.md`](e2e/scenarios/cors-jwt-v26.md) | Отчёт: [`e2e/reports/backend-v26.md`](e2e/reports/backend-v26.md)
+
+---
+
 ## Environment Variables
 
 See [.env.example](.env.example) for the full list of required environment variables.
