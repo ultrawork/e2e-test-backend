@@ -11,7 +11,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "lint": "eslint src/ --ext .ts",
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",
