@@ -9,9 +9,16 @@ import { router } from "./routes";
 const app = express();
 
 app.use(helmet());
+const allowedOrigins = config.corsOrigins;
 app.use(
   cors({
-    origin: config.corsOrigins === "*" ? true : config.corsOrigins,
+    origin: (origin, callback) => {
+      if (allowedOrigins === "*" || !origin || (Array.isArray(allowedOrigins) && allowedOrigins.includes(origin))) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
