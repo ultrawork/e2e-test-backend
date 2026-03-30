@@ -167,3 +167,13 @@ npx playwright test e2e/cors-jwt.spec.ts
 - Сценарии: e2e/cors-jwt.spec.ts
 - E2E-отчёт: e2e/reports/backend-v28-20260329T120000Z.md
 - Результат: PASS 6/6
+
+## E2E v29: Верификация CORS/JWT
+
+```bash
+npx playwright test e2e/cors-jwt-v29.spec.ts
+```
+
+- Сценарии: e2e/cors-jwt-v29.spec.ts
+- E2E-отчёт: e2e/reports/backend-v29-20260330T120000Z.md
+- Результат: PASS 6/6
