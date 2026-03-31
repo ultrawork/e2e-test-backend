@@ -1,8 +1,9 @@
 import { test, expect } from "@playwright/test";
+import { mkdirSync } from "fs";
 
 const API_URL = process.env.API_URL || "http://localhost:4000";
 
-test.describe("CORS/JWT Verification", () => {
+test.describe("CORS/JWT Verification v31", () => {
   test("SC-1: GET /health returns 200 and status ok", async ({ request }) => {
     const response = await request.get(`${API_URL}/health`);
     expect(response.status()).toBe(200);
