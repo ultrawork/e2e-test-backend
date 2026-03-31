@@ -67,7 +67,7 @@ test.describe("Backend Notes API v32", () => {
     const notes = await listRes.json();
     expect(Array.isArray(notes)).toBe(true);
     expect(notes.length).toBeGreaterThanOrEqual(1);
-    const found = notes.some((n: any) => n.title === "Test Note");
+    const found = notes.some((n: { title: string }) => n.title === "Test Note");
     expect(found).toBe(true);
 
     await page.goto(`${API_URL}/health`);
