@@ -206,16 +206,18 @@ CORS_ORIGINS="http://localhost:3000,http://localhost:8081,http://localhost:19006
 JWT_ENABLED=true \
 JWT_SECRET=e2e-test-secret-key-ultrawork \
 NODE_ENV=development \
-npx playwright test e2e/cors-jwt.spec.ts
+npx playwright test e2e/cors-jwt-v34.spec.ts
 ```
 
-Сценарии (`e2e/cors-jwt.spec.ts`):
+Сценарии (`e2e/cors-jwt-v34.spec.ts`):
 - SC-01: Health check (GET /health → 200)
 - SC-02: 401 без токена (GET /api/notes → 401)
 - SC-03: dev-token + авторизованный доступ (POST /api/auth/dev-token → GET /api/notes → 200)
-- SC-04: GET /api/notes с невалидным Bearer токеном → 401
-- SC-05: CORS preflight для разрешённых Origins (localhost:3000, 8081, 19006) → 204 + CORS headers
-- SC-06: CORS preflight с неизвестным Origin (http://evil.example.com) → 204, без access-control-allow-origin
+- SC-04: CORS preflight для http://localhost:3000 → 204 + CORS headers
+- SC-05: CORS preflight для http://localhost:8081 → 204 + CORS headers
+- SC-06: CORS preflight для http://localhost:19006 → 204 + CORS headers
+- SC-07: CORS preflight с неизвестным Origin (http://evil.example.com) → 204, без access-control-allow-origin
+- SC-08: GET /api/notes с невалидным Bearer токеном → 401
 
 ### Генерация тестового JWT
 
