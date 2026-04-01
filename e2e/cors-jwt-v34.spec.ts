@@ -108,12 +108,11 @@ test.describe("CORS/JWT Verification v34", () => {
         "Access-Control-Request-Method": "GET",
       },
     });
+    // cors npm package still responds 204 to OPTIONS; blocking is expressed
+    // by the absence of CORS headers, not by the status code.
     expect(response.status()).toBe(204);
     const headers = response.headers();
-    expect(
-      headers["access-control-allow-origin"] === undefined ||
-        headers["access-control-allow-origin"] === "",
-    ).toBe(true);
+    expect(headers["access-control-allow-origin"]).toBeUndefined();
   });
 
   test("SC-08: GET /api/notes with invalid Bearer token returns 401", async ({
