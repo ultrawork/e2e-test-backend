@@ -198,3 +198,33 @@ npx playwright test e2e/cors-jwt-v29.spec.ts
 - Сценарии: e2e/cors-jwt-v29.spec.ts
 - E2E-отчёт: e2e/reports/backend-v29-20260330T120000Z.md
 - Результат: PASS 6/6
+
+## E2E v34: Верификация CORS/JWT
+
+```bash
+CORS_ORIGINS="http://localhost:3000,http://localhost:8081,http://localhost:19006" \
+JWT_ENABLED=true \
+JWT_SECRET=e2e-test-secret-key-ultrawork \
+NODE_ENV=development \
+npx playwright test e2e/cors-jwt-v34.spec.ts
+```
+
+Сценарии (`e2e/cors-jwt-v34.spec.ts`):
+- SC-1: Health check (GET /health → 200)
+- SC-2: 401 без токена (GET /api/notes → 401)
+- SC-3: dev-token + авторизованный доступ (POST /api/auth/dev-token → GET /api/notes → 200)
+- SC-4: CORS preflight для http://localhost:3000 → 204 + CORS headers
+- SC-5: CORS preflight для http://localhost:8081 → 204 + CORS headers
+- SC-6: CORS preflight для http://localhost:19006 → 204 + CORS headers
+- SC-7: CORS preflight с неизвестным Origin (http://evil.example.com) → 204, без access-control-allow-origin
+- SC-8: GET /api/notes с невалидным Bearer токеном → 401
+
+### Генерация тестового JWT
+
+Для ручной генерации токена с секретом `e2e-test-secret-key-ultrawork`:
+
+```bash
+node -e "console.log(require('jsonwebtoken').sign({userId:'test',email:'test@test.com'}, 'e2e-test-secret-key-ultrawork', {expiresIn:'1h'}))"
+```
+
+Или используйте эндпоинт `/api/auth/dev-token` (доступен при `NODE_ENV=development`).
