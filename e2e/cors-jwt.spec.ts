@@ -3,7 +3,11 @@ import { mkdirSync } from "fs";
 
 const API_URL = process.env.API_URL || "http://localhost:4000";
 
-test.describe("CORS/JWT Verification v31", () => {
+test.describe("CORS/JWT Verification v33", () => {
+  test.beforeAll(() => {
+    mkdirSync("screenshots", { recursive: true });
+  });
+
   test("SC-1: GET /health returns 200 and status ok", async ({ request }) => {
     const response = await request.get(`${API_URL}/health`);
     expect(response.status()).toBe(200);
@@ -41,7 +45,9 @@ test.describe("CORS/JWT Verification v31", () => {
     expect(Array.isArray(notes)).toBe(true);
   });
 
-  test("SC-4: OPTIONS preflight with Origin http://localhost:3000 returns 204 and CORS headers", async () => {
+  test("SC-4: OPTIONS preflight with Origin http://localhost:3000 returns 204 and CORS headers", async ({
+    page,
+  }) => {
     const origin = "http://localhost:3000";
     const response = await fetch(`${API_URL}/api/notes`, {
       method: "OPTIONS",
@@ -55,9 +61,12 @@ test.describe("CORS/JWT Verification v31", () => {
     expect(response.headers.get("access-control-allow-credentials")).toBe(
       "true",
     );
+    await page.screenshot({ path: "screenshots/SC-4-cors-localhost-3000.png" });
   });
 
-  test("SC-5: OPTIONS preflight with Origin http://localhost:8081 returns 204 and CORS headers", async () => {
+  test("SC-5: OPTIONS preflight with Origin http://localhost:8081 returns 204 and CORS headers", async ({
+    page,
+  }) => {
     const origin = "http://localhost:8081";
     const response = await fetch(`${API_URL}/api/notes`, {
       method: "OPTIONS",
@@ -71,9 +80,12 @@ test.describe("CORS/JWT Verification v31", () => {
     expect(response.headers.get("access-control-allow-credentials")).toBe(
       "true",
     );
+    await page.screenshot({ path: "screenshots/SC-5-cors-localhost-8081.png" });
   });
 
-  test("SC-6: OPTIONS preflight with Origin http://localhost:19006 returns 204 and CORS headers", async () => {
+  test("SC-6: OPTIONS preflight with Origin http://localhost:19006 returns 204 and CORS headers", async ({
+    page,
+  }) => {
     const origin = "http://localhost:19006";
     const response = await fetch(`${API_URL}/api/notes`, {
       method: "OPTIONS",
@@ -87,5 +99,8 @@ test.describe("CORS/JWT Verification v31", () => {
     expect(response.headers.get("access-control-allow-credentials")).toBe(
       "true",
     );
+    await page.screenshot({
+      path: "screenshots/SC-6-cors-localhost-19006.png",
+    });
   });
 });

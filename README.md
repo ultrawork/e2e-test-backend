@@ -136,6 +136,27 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:8081,http://localhost:19006
 CORS_ORIGINS=*
 ```
 
+## JWT Configuration
+
+Set `JWT_SECRET` to a strong secret key for signing tokens.
+Set `JWT_ENABLED=true` to enforce JWT authentication on protected routes.
+When `JWT_ENABLED=false`, a default dev user is injected (development only).
+
+```env
+JWT_SECRET=your-super-secret-key
+JWT_ENABLED=true
+```
+
+### Local Debug Run
+
+```bash
+CORS_ORIGINS="http://localhost:3000,http://localhost:8081,http://localhost:19006" \
+JWT_ENABLED=true \
+JWT_SECRET=e2e-test-secret-key-ultrawork \
+NODE_ENV=development \
+npm run dev
+```
+
 ## Environment Variables
 
 See [.env.example](.env.example) for the full list of required environment variables.
