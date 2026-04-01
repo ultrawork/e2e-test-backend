@@ -1,13 +1,8 @@
 import { test, expect } from "@playwright/test";
-import { mkdirSync } from "fs";
 
 const API_URL = process.env.API_URL || "http://localhost:4000";
 
-test.describe("CORS/JWT Verification v33", () => {
-  test.beforeAll(() => {
-    mkdirSync("screenshots", { recursive: true });
-  });
-
+test.describe("CORS/JWT Verification", () => {
   test("SC-1: GET /health returns 200 and status ok", async ({ request }) => {
     const response = await request.get(`${API_URL}/health`);
     expect(response.status()).toBe(200);
@@ -102,5 +97,16 @@ test.describe("CORS/JWT Verification v33", () => {
     await page.screenshot({
       path: "screenshots/SC-6-cors-localhost-19006.png",
     });
+  });
+
+  test("SC-7: GET /api/notes with invalid JWT token returns 401", async ({
+    request,
+  }) => {
+    const response = await request.get(`${API_URL}/api/notes`, {
+      headers: { Authorization: "Bearer invalid.token.value" },
+    });
+    expect(response.status()).toBe(401);
+    const body = await response.json();
+    expect(body).toHaveProperty("error");
   });
 });
