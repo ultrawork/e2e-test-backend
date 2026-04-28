@@ -1,0 +1,59 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/notes
+      JWT_SECRET: ${JWT_SECRET:-dev-secret}
+      JWT_ENABLED: ${JWT_ENABLED:-true}
+      PORT: "3000"
+      NODE_ENV: ${NODE_ENV:-development}
+      BASE_PATH: ${BASE_PATH:-/api}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate-seed:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  migrate-seed:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - .:/app
+      - node_modules_dev:/app/node_modules
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/notes
+      JWT_SECRET: ${JWT_SECRET:-dev-secret}
+    command: >
+      sh -c "npm ci --silent && npx prisma migrate deploy && npm run seed"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: notes
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata_dev:
+  node_modules_dev:
